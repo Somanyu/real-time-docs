@@ -9,7 +9,7 @@ import { LogoApple, LogoGoogle } from "./ui/icons"
 import Image from "next/image"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { signupSchema } from "@/lib/validations/auth"
+import { authSchema } from "@/lib/validations/auth"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import z from "zod"
@@ -18,15 +18,15 @@ import { toast } from "sonner"
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof signupSchema>>({
-    resolver: zodResolver(signupSchema),
+  const form = useForm<z.infer<typeof authSchema>>({
+    resolver: zodResolver(authSchema),
     defaultValues: {
       email: "",
       password: "",
     }
   })
 
-  async function onSignupSubmit(data: z.infer<typeof signupSchema>) {
+  async function onSignupSubmit(data: z.infer<typeof authSchema>) {
 
     try {
 
