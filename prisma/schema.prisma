@@ -12,3 +12,136 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  image    String?
+  password String? // nullable for OAuth users
+
+  emailVerified DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships WorkspaceMember[]
+  documents   Document[]        @relation("CreatedDocuments")
+  versions    DocumentVersion[] @relation("VersionAuthor")
+  activities  ActivityLog[]
+}
+
+model Workspace {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members    WorkspaceMember[]
+  documents  Document[]
+  activities ActivityLog[]
+}
+
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model WorkspaceMember {
+  id       String        @id @default(cuid())
+  role     WorkspaceRole
+  joinedAt DateTime      @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model Document {
+  id         String  @id @default(cuid())
+  title      String
+  content    Json
+  isArchived Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+
+  createdBy   User   @relation("CreatedDocuments", fields: [createdById], references: [id])
+  createdById String
+
+  versions   DocumentVersion[]
+  shareLinks ShareLink[]
+  activities ActivityLog[]
+
+  @@index([workspaceId])
+  @@index([createdById])
+}
+
+model DocumentVersion {
+  id        String   @id @default(cuid())
+  content   Json
+  createdAt DateTime @default(now())
+
+  document   Document @relation(fields: [documentId], references: [id])
+  documentId String
+
+  createdBy   User   @relation("VersionAuthor", fields: [createdById], references: [id])
+  createdById String
+
+  @@index([documentId])
+}
+
+model ShareLink {
+  id        String        @id @default(cuid())
+  token     String        @unique
+  role      WorkspaceRole
+  expiresAt DateTime?
+  createdAt DateTime      @default(now())
+
+  document   Document @relation(fields: [documentId], references: [id])
+  documentId String
+
+  @@index([documentId])
+}
+
+enum ActivityType {
+  DOCUMENT_CREATED
+  DOCUMENT_UPDATED
+  DOCUMENT_ARCHIVED
+  DOCUMENT_RESTORED
+  TITLE_UPDATED
+  MEMBER_INVITED
+  MEMBER_REMOVED
+  ROLE_UPDATED
+}
+
+model ActivityLog {
+  id       String       @id @default(cuid())
+  type     ActivityType
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  workspaceId String?
+
+  document   Document? @relation(fields: [documentId], references: [id])
+  documentId String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@index([workspaceId])
+  @@index([documentId])
+}
