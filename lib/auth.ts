@@ -1,26 +1,30 @@
-import NextAuth from "next-auth"
+import NextAuth, { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import AppleProvider from "next-auth/providers/apple"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "./prisma"
 import bcrypt from "bcrypt"
-import slugify from "slugify"
+import { generateWorkspaceSlug } from "./slug"
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
+
     session: {
         strategy: "jwt",
     },
+
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
+
         AppleProvider({
             clientId: process.env.APPLE_ID!,
             clientSecret: process.env.APPLE_SECRET!,
         }),
+
         CredentialsProvider({
             name: "Credentials",
             credentials: {
@@ -53,6 +57,7 @@ const handler = NextAuth({
             },
         }),
     ],
+
     callbacks: {
         async session({ session, token }) {
             if (token?.sub) {
@@ -61,28 +66,21 @@ const handler = NextAuth({
             return session
         },
     },
+
     events: {
         async createUser({ user }) {
-            const baseSlug = slugify(
-                user.name ? `${user.name}-workspace` : "personal-workspace",
-                { lower: true }
-            )
+            console.log("🔥 createUser event triggered for:", user.email)
 
-            let slug = baseSlug
-            let counter = 1
+            const baseName = user.name ||
+                user.email?.split("@")[0] ||
+                "workspace"
 
-            while (
-                await prisma.workspace.findUnique({
-                    where: { slug }
-                })
-            ) {
-                slug = `${baseSlug}-${counter++}`
-            }
+            const slug = generateWorkspaceSlug(baseName)
 
             const workspace = await prisma.workspace.create({
                 data: {
                     name: user.name
-                        ? `${user.name}'s Workspace`
+                        ? `${baseName}'s Workspace`
                         : "Personal Workspace",
                     slug,
                 }
@@ -97,6 +95,8 @@ const handler = NextAuth({
             })
         }
     }
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

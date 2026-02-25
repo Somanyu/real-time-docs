@@ -42,7 +42,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       }
 
       // Success
-      router.push("/dashboard")
+      // router.push("/dashboard")
+
+      const workspaceRes = await fetch("/api/me/workspace")
+
+      if (!workspaceRes.ok) {
+        toast.warning("Something went wrong.")
+      }
+
+      const { slug } = await workspaceRes.json()
+
+      router.push(`/workspace/${slug}`)
     } catch (error) {
       console.error(error)
       toast.error("Unexpected error occurred.")
