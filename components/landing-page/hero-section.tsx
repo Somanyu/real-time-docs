@@ -5,16 +5,23 @@ import Image from "next/image";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
+import { useWorkspaceStore } from "@/store/workspace-store";
 
 export default function LandingPageHeroSection() {
 
     const router = useRouter()
+    const lastWorkspace = useWorkspaceStore((state) => state.lastVisitedWorkspace)
+
 
     const handleRedirect = (type: "signup" | "demo") => {
         if (type === "signup") {
-            router.push("/signup")
+            if (lastWorkspace) {
+                router.push(`/workspace/${lastWorkspace}`)
+            } else {
+                router.push("/signup")
+            }
         } else {
-            router.push("/demo")
+            window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
         }
     }
 

@@ -56,14 +56,23 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"div">)
         return
       }
 
-      // Redirect
-      router.push("/dashboard")
+      // Get workspace
+      const workspaceRes = await fetch("/api/me/workspace")
+
+      if (!workspaceRes.ok) {
+        toast.warning("Unexpected error in workspace.")
+        router.push("/")
+        return
+      }
+
+      const { slug } = await workspaceRes.json()
+
+      router.push(`/workspace/${slug}`)
     } catch (error) {
       console.error(error)
       toast.error("Unexpected error occurred.")
     }
   }
-
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>

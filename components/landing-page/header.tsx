@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
+import { useWorkspaceStore } from "@/store/workspace-store";
 import { NavItem } from "@/types/landing-page";
 import { Menu } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -8,10 +9,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import LogoutButton from "../ui/logout-button";
 
 export default function LandingPageHeader() {
     const router = useRouter()
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
+    const lastWorkspace = useWorkspaceStore((state) => state.lastVisitedWorkspace)
 
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
@@ -30,12 +33,38 @@ export default function LandingPageHeader() {
         },
     ];
 
+    let authButtons: React.ReactNode = null
+
     const handleRedirect = (type: "login" | "signup") => {
         if (type === "login") {
             router.push("/login")
         } else {
             router.push("/signup")
         }
+    }
+
+    const handleWorkspaceRedirect = () => {
+        if (lastWorkspace) {
+            router.push(`/workspace/${lastWorkspace}`)
+        } else {
+            router.push("/dashboard")
+        }
+    }
+
+    if (session) {
+        authButtons = (
+            <>
+                <Button onClick={handleWorkspaceRedirect}>Workspace</Button>
+                <LogoutButton />
+            </>
+        )
+    } else {
+        authButtons = (
+            <>
+                <Button onClick={() => handleRedirect("login")} variant="ghost">Login</Button>
+                <Button onClick={() => handleRedirect("signup")}>Get Started</Button>
+            </>
+        )
     }
 
     return (
@@ -48,17 +77,7 @@ export default function LandingPageHeader() {
 
                     <div className="flex items-center gap-x-3 lg:order-2">
                         <div className="flex items-center gap-x-3">
-                            {status === "loading" ? null : session ? (
-                                <div className="flex items-center gap-x-3">
-                                    <p>Hi, {session.user?.name || session.user?.email}</p>
-                                    <Button>Workspace</Button>
-                                </div>
-                            ) : (
-                                <>
-                                    <Button onClick={() => handleRedirect("login")} variant="ghost">Login</Button>
-                                    <Button onClick={() => handleRedirect("signup")}>Get Started</Button>
-                                </>
-                            )}
+                            {authButtons}
                         </div>
                         <Button className="lg:hidden" size="icon" variant="ghost" onClick={() => setIsOpen(!isOpen)}><Menu className="size-7" /></Button>
                     </div>

@@ -10,3 +10,8 @@ export interface WorkspaceLayoutProps {
         slug: string
     }>
 }
+
+export interface WorkspaceState {
+    lastVisitedWorkspace: string | null
+    setLastVisitedWorkspace: (slug: string) => void
+}
