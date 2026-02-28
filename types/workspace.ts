@@ -15,3 +15,8 @@ export interface WorkspaceState {
     lastVisitedWorkspace: string | null
     setLastVisitedWorkspace: (slug: string) => void
 }
+
+export interface CreateWorkspaceDialogProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+}

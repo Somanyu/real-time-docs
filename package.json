@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
+    "@dicebear/collection": "^9.3.2",
+    "@dicebear/core": "^9.3.2",
+    "@dicebear/icons": "^9.3.2",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",

@@ -29,6 +29,9 @@ model User {
   documents   Document[]        @relation("CreatedDocuments")
   versions    DocumentVersion[] @relation("VersionAuthor")
   activities  ActivityLog[]
+
+  lastVisitedWorkspaceId String? // nullable
+  lastVisitedWorkspace   Workspace? @relation(fields: [lastVisitedWorkspaceId], references: [id])
 }
 
 model Workspace {
@@ -42,6 +45,8 @@ model Workspace {
   members    WorkspaceMember[]
   documents  Document[]
   activities ActivityLog[]
+
+  users User[]
 }
 
 enum WorkspaceRole {

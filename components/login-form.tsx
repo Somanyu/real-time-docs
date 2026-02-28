@@ -41,9 +41,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         return
       }
 
-      // Success
-      // router.push("/dashboard")
-
       const workspaceRes = await fetch("/api/me/workspace")
 
       if (!workspaceRes.ok) {

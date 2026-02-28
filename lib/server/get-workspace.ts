@@ -26,6 +26,14 @@ export async function getWorkspaceOrThrow(slug: string) {
         redirect("/")
     }
 
+    // update the last visited workspace
+    await prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+            lastVisitedWorkspaceId: workspace.id,
+        },
+    })
+
     return {
         workspace,
         membership,
