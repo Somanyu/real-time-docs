@@ -13,8 +13,11 @@ import { Field, FieldError, FieldLabel } from "../ui/field"
 import { CreateWorkspaceDialogProps } from "@/types/workspace"
 import z from "zod"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 export function CreateWorkspaceDialog({ open, onOpenChange }: Readonly<CreateWorkspaceDialogProps>) {
+    const router = useRouter()
+
     const [emailInput, setEmailInput] = useState<string>("")
 
     const form = useForm<CreateWorkspaceInput>({
@@ -68,7 +71,12 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: Readonly<CreateWor
                 body: JSON.stringify(data)
             })
 
-            if (!res.ok) {
+            const workspace = await res.json()
+
+            if (res.ok) {
+                toast.success("Created workspace")
+                router.push(`/workspace/${workspace.slug}`)
+            } else {
                 toast.warning("Failed to create workspace")
             }
 
