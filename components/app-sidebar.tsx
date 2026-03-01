@@ -1,37 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { AudioWaveform, BookOpen, Bot, Command, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal } from "lucide-react"
+import { BookOpen, Bot, Clock4, Plus, Settings2, SquareTerminal, Star } from "lucide-react"
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
+import { NavQuickActions } from "@/components/nav-quick-actions"
 import { NavUser } from "@/components/nav-user"
 import { WorkspaceSwitcher } from "@/components/workspace-switcher"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar"
+import { Button } from "./ui/button"
+import { useWorkspace } from "./workspace/workspace-provider"
+import { toast } from "sonner"
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
   navMain: [
     {
       title: "Playground",
@@ -119,34 +100,61 @@ const data = {
       ],
     },
   ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
 }
 
+const sidebarQuickActions = [
+  {
+    name: "Favorites",
+    url: "#",
+    icon: Star,
+  },
+  {
+    name: "Recent",
+    url: "#",
+    icon: Clock4,
+  },
+]
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { workspace } = useWorkspace()
+
+  async function handleCreateDocument() {
+    if (!workspace?.id) {
+      toast.error("No workspace selected")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/document", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId: workspace.id })
+      })
+
+      if (!res.ok) {
+        toast.error("Failed to create document")
+        return
+      }
+
+      const doc = await res.json()
+
+      window.open(`/document/${doc.id}`, "_blank")
+    } catch (error) {
+      console.error(error)
+      toast.error("Something went wrong")
+    }
+  }
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <WorkspaceSwitcher />
       </SidebarHeader>
       <SidebarContent>
+        <div className="w-full my-1 px-2.5">
+          <Button className="w-full" onClick={handleCreateDocument}><Plus /> New Document</Button>
+        </div>
+        <NavQuickActions projects={sidebarQuickActions} />
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
