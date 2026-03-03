@@ -1,14 +1,13 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { createEditor, Descendant, Editor } from "slate"
-import { Slate, Editable, withReact, useSlate, RenderElementProps, RenderLeafProps } from "slate-react"
+import { createEditor, Descendant } from "slate"
+import { Slate, Editable, withReact, RenderElementProps, RenderLeafProps } from "slate-react"
 import { withHistory } from "slate-history"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
-import { MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
+import { SlateEditorProps } from "@/types/editor-type"
 import { BASE_HEIGHT, BASE_WIDTH, ZOOM_LEVELS } from "@/constants/editor"
 import { AlignButton } from "./align-button"
 import { FontColorPicker } from "./font-color-picker"
@@ -17,52 +16,7 @@ import { HeadingSelect } from "./heading-select"
 import { UndoButton } from "./undo-button"
 import { RedoButton } from "./redo-button"
 import { BlockButton } from "./block-button"
-
-
-/* ======================== */
-/* MARK HELPERS */
-/* ======================== */
-
-
-
-const isMarkActive = (editor: Editor, format: MarkFormat) => {
-    const marks = Editor.marks(editor)
-    return marks ? marks[format] === true : false
-}
-
-const toggleMark = (editor: Editor, format: MarkFormat) => {
-    const isActive = isMarkActive(editor, format)
-    if (isActive) Editor.removeMark(editor, format)
-    else Editor.addMark(editor, format, true)
-}
-
-/* ======================== */
-/* BLOCK HELPERS */
-/* ======================== */
-
-
-
-/* ======================== */
-/* TOOLBAR BUTTONS */
-/* ======================== */
-
-const MarkButton = ({ format, icon }: MarkButtonProps) => {
-    const editor = useSlate()
-
-    return (
-        <Button
-            variant={isMarkActive(editor, format) ? "secondary" : "ghost"}
-            size="icon"
-            onMouseDown={(e) => {
-                e.preventDefault()
-                toggleMark(editor, format)
-            }}
-        >
-            {icon}
-        </Button>
-    )
-}
-
+import { MarkButton } from "./mark-button"
 
 /* ======================== */
 /* MAIN EDITOR */
@@ -188,6 +142,10 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
                     <MarkButton format="bold" icon={<Bold className="w-4 h-4" />} />
                     <MarkButton format="italic" icon={<Italic className="w-4 h-4" />} />
                     <MarkButton format="underline" icon={<Underline className="w-4 h-4" />} />
+                    <MarkButton format="code" icon={<Code className="w-4 h-4" />} />
+
+                    <Separator orientation="vertical" className="h-5 w-px" />
+
                     <FontColorPicker />
 
                     <Separator orientation="vertical" className="h-5 w-px" />
@@ -201,10 +159,6 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
 
                     <BlockButton format="bulleted-list" icon={<List className="w-4 h-4" />} />
                     <BlockButton format="numbered-list" icon={<ListOrdered className="w-4 h-4" />} />
-
-                    <Separator orientation="vertical" className="h-5 w-px" />
-
-                    <MarkButton format="code" icon={<Code className="w-4 h-4" />} />
 
                     <Separator orientation="vertical" className="h-5 w-px" />
 
