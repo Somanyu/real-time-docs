@@ -1,38 +1,29 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { createEditor, Descendant, Editor, Transforms, Element as SlateElement } from "slate"
+import { createEditor, Descendant, Editor } from "slate"
 import { Slate, Editable, withReact, useSlate, RenderElementProps, RenderLeafProps } from "slate-react"
 import { withHistory } from "slate-history"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Bold, Italic, Underline, Code, Undo2, Redo2, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
+import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
-import { BlockFormat, ListType, MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
-import { BASE_HEIGHT, BASE_WIDTH, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
+import { MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
+import { BASE_HEIGHT, BASE_WIDTH, ZOOM_LEVELS } from "@/constants/editor"
 import { AlignButton } from "./align-button"
 import { FontColorPicker } from "./font-color-picker"
 import { FontSizeSelect } from "./font-size-select"
 import { HeadingSelect } from "./heading-select"
 import { UndoButton } from "./undo-button"
 import { RedoButton } from "./redo-button"
+import { BlockButton } from "./block-button"
 
 
 /* ======================== */
 /* MARK HELPERS */
 /* ======================== */
 
-const BlockButton = ({ format, icon }: { format: BlockFormat, icon: React.ReactNode }) => {
-    const editor = useSlate()
 
-    const active = isBlockActive(editor, format)
-
-    return (
-        <Button variant={active ? "secondary" : "ghost"} size="icon" onMouseDown={(event) => { event.preventDefault(); toggleBlock(editor, format) }}>
-            {icon}
-        </Button>
-    )
-}
 
 const isMarkActive = (editor: Editor, format: MarkFormat) => {
     const marks = Editor.marks(editor)
@@ -45,56 +36,9 @@ const toggleMark = (editor: Editor, format: MarkFormat) => {
     else Editor.addMark(editor, format, true)
 }
 
-const toggleBlock = (editor: Editor, format: BlockFormat) => {
-    const isList = (LIST_TYPES as readonly string[]).includes(format)
-
-    const isActive = isBlockActive(editor, format)
-
-    Transforms.unwrapNodes(editor, {
-        match: n =>
-            !Editor.isEditor(n) &&
-            SlateElement.isElement(n) &&
-            LIST_TYPES.includes(n.type as ListType),
-        split: true,
-    })
-
-    let newType: BlockFormat
-
-    if (isActive) {
-        newType = "paragraph"
-    } else if (isList) {
-        newType = "list-item"
-    } else {
-        newType = format
-    }
-
-    Transforms.setNodes(editor, {
-        type: newType,
-    })
-
-    if (!isActive && isList) {
-        const block = {
-            type: format,
-            children: [],
-        }
-
-        Transforms.wrapNodes(editor, block)
-    }
-}
-
 /* ======================== */
 /* BLOCK HELPERS */
 /* ======================== */
-
-const isBlockActive = (editor: Editor, format: BlockFormat) => {
-    const [match] = Editor.nodes(editor, {
-        match: n =>
-            !Editor.isEditor(n) &&
-            SlateElement.isElement(n) &&
-            n.type === format,
-    })
-    return !!match
-}
 
 
 
