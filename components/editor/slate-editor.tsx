@@ -9,46 +9,9 @@ import { Separator } from "@/components/ui/separator"
 import { Bold, Italic, Underline, Code, Undo2, Redo2, CaseUpper, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { AlignType, BlockFormat, ListType, MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
+import { BASE_HEIGHT, BASE_WIDTH, FONT_COLORS, FONT_SIZES, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
 
-const FONT_SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48]
-const ZOOM_LEVELS = [50, 75, 90, 100, 125, 150, 200]
-const BASE_WIDTH = 794
-const BASE_HEIGHT = 1123
-const FONT_COLORS = [
-    "#000000",
-    "#ef4444",
-    "#f97316",
-    "#eab308",
-    "#22c55e",
-    "#06b6d4",
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899",
-    "#6b7280",
-]
-
-type AlignType = "left" | "center" | "right" | "justify"
-type MarkFormat = "bold" | "italic" | "underline" | "code" | "fontSize" | "color"
-type BlockFormat =
-    | "paragraph"
-    | "heading-one"
-    | "heading-two"
-    | "heading-three"
-    | "bulleted-list"
-    | "numbered-list"
-    | "list-item"
-
-const LIST_TYPES = ["numbered-list", "bulleted-list"] as const
-type ListType = (typeof LIST_TYPES)[number]
-
-interface Props {
-    initialValue: Descendant[],
-}
-
-interface MarkButtonProps {
-    format: MarkFormat
-    icon: React.ReactNode
-}
 
 /* ======================== */
 /* MARK HELPERS */
@@ -249,7 +212,7 @@ const RedoButton = () => {
 /* MAIN EDITOR */
 /* ======================== */
 
-export function SlateEditor({ initialValue }: Readonly<Props>) {
+export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
     const editor = useMemo(
         () => withHistory(withReact(createEditor())),
         []
