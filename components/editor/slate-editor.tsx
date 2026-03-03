@@ -13,6 +13,7 @@ import { BASE_HEIGHT, BASE_WIDTH, LIST_TYPES, ZOOM_LEVELS } from "@/constants/ed
 import { AlignButton } from "./align-button"
 import { FontColorPicker } from "./font-color-picker"
 import { FontSizeSelect } from "./font-size-select"
+import { HeadingSelect } from "./heading-select"
 
 
 /* ======================== */
@@ -93,26 +94,7 @@ const isBlockActive = (editor: Editor, format: BlockFormat) => {
     return !!match
 }
 
-const setBlockType = (editor: Editor, format: BlockFormat) => {
-    Transforms.setNodes(
-        editor,
-        { type: format },
-        {
-            match: n =>
-                !Editor.isEditor(n) && SlateElement.isElement(n),
-        }
-    )
-}
 
-const getCurrentBlock = (editor: Editor) => {
-    const [match] = Editor.nodes(editor, {
-        match: n =>
-            !Editor.isEditor(n) &&
-            SlateElement.isElement(n),
-    })
-
-    return match ? (match[0] as SlateElement).type : "paragraph"
-}
 
 /* ======================== */
 /* TOOLBAR BUTTONS */
@@ -348,29 +330,5 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
             </div>
 
         </Slate>
-    )
-}
-
-const HeadingSelect = () => {
-    const editor = useSlate()
-
-    const currentType = getCurrentBlock(editor)
-
-    const handleChange = (value: BlockFormat) => {
-        setBlockType(editor, value)
-    }
-
-    return (
-        <Select value={currentType} onValueChange={handleChange}>
-            <SelectTrigger className="w-35 h-8 text-xs">
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper">
-                <SelectItem value="paragraph">Normal text</SelectItem>
-                <SelectItem value="heading-one">Heading 1</SelectItem>
-                <SelectItem value="heading-two">Heading 2</SelectItem>
-                <SelectItem value="heading-three">Heading 3</SelectItem>
-            </SelectContent>
-        </Select>
     )
 }
