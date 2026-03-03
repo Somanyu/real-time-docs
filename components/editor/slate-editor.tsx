@@ -6,12 +6,12 @@ import { Slate, Editable, withReact, useSlate, RenderElementProps, RenderLeafPro
 import { withHistory } from "slate-history"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Bold, Italic, Underline, Code, Undo2, Redo2, CaseUpper, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
+import { Bold, Italic, Underline, Code, Undo2, Redo2, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { BlockFormat, ListType, MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
-import { BASE_HEIGHT, BASE_WIDTH, FONT_COLORS, FONT_SIZES, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
+import { BASE_HEIGHT, BASE_WIDTH, FONT_SIZES, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
 import { AlignButton } from "./align-button"
+import { FontColorPicker } from "./font-color-picker"
 
 
 /* ======================== */
@@ -141,15 +141,6 @@ const setFontSize = (editor: Editor, size: string) => {
 const getActiveFontSize = (editor: Editor) => {
     const marks = Editor.marks(editor)
     return marks?.fontSize || "16"
-}
-
-const setFontColor = (editor: Editor, color: string) => {
-    Editor.addMark(editor, "color", color)
-}
-
-const getActiveFontColor = (editor: Editor) => {
-    const marks = Editor.marks(editor)
-    return marks?.color || "#000000"
 }
 
 const UndoButton = () => {
@@ -416,49 +407,5 @@ const FontSizeSelect = () => {
                 ))}
             </SelectContent>
         </Select>
-    )
-}
-
-const FontColorPicker = () => {
-    const editor = useSlate()
-    const activeColor = getActiveFontColor(editor)
-
-    return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="flex flex-col items-center justify-center gap-0.5 h-8 w-8"
-                >
-                    {/* Aa icon */}
-                    <span className="text-base font-semibold leading-none">
-                        <CaseUpper size={10} />
-                    </span>
-
-                    {/* Color indicator line */}
-                    <span
-                        className="w-4 h-0.5 rounded-sm"
-                        style={{ backgroundColor: activeColor }}
-                    />
-                </Button>
-            </PopoverTrigger>
-
-            <PopoverContent className="w-40 p-2">
-                <div className="grid grid-cols-5 gap-2">
-                    {FONT_COLORS.map((color) => (
-                        <button
-                            key={color}
-                            className="w-6 h-6 rounded border"
-                            style={{ backgroundColor: color }}
-                            onMouseDown={(e) => {
-                                e.preventDefault()
-                                setFontColor(editor, color)
-                            }}
-                        />
-                    ))}
-                </div>
-            </PopoverContent>
-        </Popover>
     )
 }
