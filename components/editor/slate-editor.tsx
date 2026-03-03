@@ -14,6 +14,8 @@ import { AlignButton } from "./align-button"
 import { FontColorPicker } from "./font-color-picker"
 import { FontSizeSelect } from "./font-size-select"
 import { HeadingSelect } from "./heading-select"
+import { UndoButton } from "./undo-button"
+import { RedoButton } from "./redo-button"
 
 
 /* ======================== */
@@ -117,39 +119,6 @@ const MarkButton = ({ format, icon }: MarkButtonProps) => {
     )
 }
 
-const UndoButton = () => {
-    const editor = useSlate()
-
-    return (
-        <Button
-            variant="ghost"
-            size="icon"
-            onMouseDown={(e) => {
-                e.preventDefault()
-                editor.undo()
-            }}
-        >
-            <Undo2 className="w-4 h-4" />
-        </Button>
-    )
-}
-
-const RedoButton = () => {
-    const editor = useSlate()
-
-    return (
-        <Button
-            variant="ghost"
-            size="icon"
-            onMouseDown={(e) => {
-                e.preventDefault()
-                editor.redo()
-            }}
-        >
-            <Redo2 className="w-4 h-4" />
-        </Button>
-    )
-}
 
 /* ======================== */
 /* MAIN EDITOR */
