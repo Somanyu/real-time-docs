@@ -9,8 +9,9 @@ import { Separator } from "@/components/ui/separator"
 import { Bold, Italic, Underline, Code, Undo2, Redo2, CaseUpper, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { AlignType, BlockFormat, ListType, MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
+import { BlockFormat, ListType, MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
 import { BASE_HEIGHT, BASE_WIDTH, FONT_COLORS, FONT_SIZES, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
+import { AlignButton } from "./align-button"
 
 
 /* ======================== */
@@ -110,29 +111,6 @@ const getCurrentBlock = (editor: Editor) => {
     })
 
     return match ? (match[0] as SlateElement).type : "paragraph"
-}
-
-const isAlignActive = (editor: Editor, format: AlignType) => {
-    const [match] = Editor.nodes(editor, {
-        match: n =>
-            !Editor.isEditor(n) &&
-            SlateElement.isElement(n) &&
-            n.align === format,
-    })
-
-    return !!match
-}
-
-const setAlignment = (editor: Editor, format: AlignType) => {
-    Transforms.setNodes(
-        editor,
-        { align: format },
-        {
-            match: n =>
-                !Editor.isEditor(n) &&
-                SlateElement.isElement(n),
-        }
-    )
 }
 
 /* ======================== */
@@ -482,22 +460,5 @@ const FontColorPicker = () => {
                 </div>
             </PopoverContent>
         </Popover>
-    )
-}
-
-const AlignButton = ({ format, icon }: { format: AlignType, icon: React.ReactNode }) => {
-    const editor = useSlate()
-
-    return (
-        <Button
-            variant={isAlignActive(editor, format) ? "secondary" : "ghost"}
-            size="icon"
-            onMouseDown={(e) => {
-                e.preventDefault()
-                setAlignment(editor, format)
-            }}
-        >
-            {icon}
-        </Button>
     )
 }
