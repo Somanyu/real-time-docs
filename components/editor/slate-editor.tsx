@@ -9,9 +9,10 @@ import { Separator } from "@/components/ui/separator"
 import { Bold, Italic, Underline, Code, Undo2, Redo2, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
 import { BlockFormat, ListType, MarkButtonProps, MarkFormat, SlateEditorProps } from "@/types/editor-type"
-import { BASE_HEIGHT, BASE_WIDTH, FONT_SIZES, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
+import { BASE_HEIGHT, BASE_WIDTH, LIST_TYPES, ZOOM_LEVELS } from "@/constants/editor"
 import { AlignButton } from "./align-button"
 import { FontColorPicker } from "./font-color-picker"
+import { FontSizeSelect } from "./font-size-select"
 
 
 /* ======================== */
@@ -132,15 +133,6 @@ const MarkButton = ({ format, icon }: MarkButtonProps) => {
             {icon}
         </Button>
     )
-}
-
-const setFontSize = (editor: Editor, size: string) => {
-    Editor.addMark(editor, "fontSize", size)
-}
-
-const getActiveFontSize = (editor: Editor) => {
-    const marks = Editor.marks(editor)
-    return marks?.fontSize || "16"
 }
 
 const UndoButton = () => {
@@ -378,33 +370,6 @@ const HeadingSelect = () => {
                 <SelectItem value="heading-one">Heading 1</SelectItem>
                 <SelectItem value="heading-two">Heading 2</SelectItem>
                 <SelectItem value="heading-three">Heading 3</SelectItem>
-            </SelectContent>
-        </Select>
-    )
-}
-
-const FontSizeSelect = () => {
-    const editor = useSlate()
-
-    const currentSize = getActiveFontSize(editor)
-
-    return (
-        <Select
-            value={String(currentSize)}
-            onValueChange={(value) => {
-                setFontSize(editor, value)
-            }}
-        >
-            <SelectTrigger className="w-20 h-8 text-xs">
-                <SelectValue />
-            </SelectTrigger>
-
-            <SelectContent position="popper">
-                {FONT_SIZES.map((size) => (
-                    <SelectItem key={size} value={String(size)}>
-                        {size}
-                    </SelectItem>
-                ))}
             </SelectContent>
         </Select>
     )
