@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { Share2, Star } from "lucide-react"
 import { SlateEditor } from "@/components/editor/slate-editor"
 import { Descendant } from "slate"
@@ -99,17 +98,6 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
                             />
                         </div>
                     </div>
-                </div>
-
-                {/* ===================== */}
-                {/* BOTTOM STATUS BAR */}
-                {/* ===================== */}
-                <div className="absolute bottom-6 right-6 hidden md:flex items-center gap-3 bg-background border shadow-sm rounded-full px-4 py-2 text-xs text-muted-foreground">
-                    <span>142 Words</span>
-                    <Separator orientation="vertical" className="h-4" />
-                    <span>910 Characters</span>
-                    <Separator orientation="vertical" className="h-4" />
-                    <span className="text-primary font-medium">Saved</span>
                 </div>
 
             </div>

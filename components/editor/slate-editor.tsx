@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { createEditor, Descendant } from "slate"
+import { createEditor, Descendant, Node } from "slate"
 import { Slate, Editable, withReact, RenderElementProps, RenderLeafProps } from "slate-react"
 import { withHistory } from "slate-history"
 import { Separator } from "@/components/ui/separator"
@@ -111,6 +111,23 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
         )
     }, [])
 
+
+    const calculateStats = (value: Descendant[]) => {
+        const text = value
+            .map(node => Node.string(node))
+            .join(" ")
+
+        const words = text.trim().length > 0
+            ? text.trim().split(/\s+/).length
+            : 0
+
+        const characters = text.length
+
+        return { words, characters }
+    }
+
+    const stats = useMemo(() => calculateStats(value), [value])
+
     return (
         <Slate editor={editor} initialValue={value} onChange={setValue}>
 
@@ -194,6 +211,16 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
                         />
                     </div>
                 </div>
+            </div>
+
+
+            {/* BOTTOM STATUS BAR */}
+            <div className="absolute bottom-6 right-6 hidden md:flex items-center gap-3 bg-background border shadow-sm rounded-full px-4 py-2 text-xs text-muted-foreground">
+                <span>{stats.words} Words</span>
+                <Separator orientation="vertical" className="h-4" />
+                <span>{stats.characters} Characters</span>
+                <Separator orientation="vertical" className="h-4" />
+                <span className="text-primary font-medium">Saved</span>
             </div>
 
         </Slate>
