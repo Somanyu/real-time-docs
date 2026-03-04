@@ -17,6 +17,8 @@ import { UndoButton } from "./undo-button"
 import { RedoButton } from "./redo-button"
 import { BlockButton } from "./block-button"
 import { MarkButton } from "./mark-button"
+import { useDocumentSaveStore } from "@/store/document-save-store"
+import { useOnlineStatus } from "@/hooks/use-online-status"
 
 /* ======================== */
 /* MAIN EDITOR */
@@ -30,6 +32,10 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
 
     const [value, setValue] = useState<Descendant[]>(initialValue)
     const [zoom, setZoom] = useState<number>(100)
+
+    const documentStatus = useDocumentSaveStore((s) => s.status)
+
+    useOnlineStatus()
 
     const renderElement = useCallback((props: RenderElementProps) => {
         const { element } = props
@@ -215,12 +221,18 @@ export function SlateEditor({ initialValue }: Readonly<SlateEditorProps>) {
 
 
             {/* BOTTOM STATUS BAR */}
-            <div className="absolute bottom-6 right-6 hidden md:flex items-center gap-3 bg-background border shadow-sm rounded-full px-4 py-2 text-xs text-muted-foreground">
+            <div className="bottom-6 right-6 fixed hidden md:flex items-center gap-3 bg-background border shadow-sm rounded-full px-4 py-2 text-xs text-muted-foreground">
                 <span>{stats.words} Words</span>
                 <Separator orientation="vertical" className="h-4" />
                 <span>{stats.characters} Characters</span>
                 <Separator orientation="vertical" className="h-4" />
-                <span className="text-primary font-medium">Saved</span>
+                <span className={`${documentStatus === "offline" ? "text-red-500" : "text-primary"} font-medium`}>
+                    {documentStatus === "offline" && "Offline"}
+                    {documentStatus === "saving" && "Saving..."}
+                    {documentStatus === "saved" && "Saved"}
+                    {documentStatus === "error" && "Error saving"}
+                    {documentStatus === "idle" && "Saved"}
+                </span>
             </div>
 
         </Slate>

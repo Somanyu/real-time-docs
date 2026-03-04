@@ -1,26 +1,28 @@
 "use client"
 
+import { useDocumentSaveStore } from "@/store/document-save-store";
 import { DocumentTitleProps } from "@/types/document";
 import { Star } from "lucide-react";
-import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
 
 export function DocumentTitleEditor({ documentId, initialTitle }: Readonly<DocumentTitleProps>) {
     const [title, setTitle] = useState<string>(initialTitle)
+    const [baselineTitle, setBaselineTitle] = useState<string>(initialTitle)
     const [isEditing, setIsEditing] = useState<boolean>(false)
-    const [isSaving, setIsSaving] = useState<boolean>(false)
+
+    const setDocumentStatus = useDocumentSaveStore((s) => s.setStatus)
+    const isOnline = useDocumentSaveStore((s) => s.isOnline)
+
     const saveIdRef = useRef<number>(0)
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    const handleSave = async () => {
-        const trimmed = title.trim() || "Untitled"
+    const saveTitle = async (value: string) => {
+        const trimmed = value.trim() || "Untitled"
 
-        if (trimmed === initialTitle) {
-            setIsEditing(false)
-            return
-        }
+        if (trimmed === baselineTitle) return
 
         const currentSaveId = ++saveIdRef.current
-        setIsSaving(true)
+        setDocumentStatus("saving")
 
         try {
             await fetch(`/api/document/${documentId}`, {
@@ -30,15 +32,42 @@ export function DocumentTitleEditor({ documentId, initialTitle }: Readonly<Docum
             })
 
             if (currentSaveId === saveIdRef.current) {
-                setIsSaving(false)
-                setIsEditing(false)
-
-                toast.success("Updated the document title")
+                setBaselineTitle(trimmed)
+                setDocumentStatus("saved")
             }
         } catch (error) {
             console.error(error)
-            setIsSaving(false)
+            setDocumentStatus("error")
         }
+    }
+
+    useEffect(() => {
+        if (!isEditing) return
+
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+        }
+
+        timeoutRef.current = setTimeout(() => {
+            saveTitle(title)
+        }, 800)
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+            }
+        }
+    }, [title, isEditing])
+
+    const flushSave = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+        }
+        saveTitle(title)
+    }
+
+    if (!isOnline) {
+        return
     }
 
     return (
@@ -49,11 +78,15 @@ export function DocumentTitleEditor({ documentId, initialTitle }: Readonly<Docum
                         autoFocus
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        onBlur={handleSave}
+                        onBlur={() => {
+                            flushSave()
+                            setIsEditing(false)
+                        }}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault()
-                                handleSave()
+                                flushSave()
+                                setIsEditing(false)
                             }
                         }}
                         className="bg-transparent outline-none text-sm font-semibold"
