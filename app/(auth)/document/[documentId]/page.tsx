@@ -53,18 +53,8 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
                             <Image src="/docs.svg" width={50} height={50} alt="Docs icon" />
                         </div>
 
-                        <DocumentTitleEditor documentId={document.id} initialTitle={document.title} />
-                        {/* <div className="min-w-0">
-                            <p className="text-sm font-semibold truncate flex items-center gap-x-1.5">
-                                <span>
-                                    {document.title}
-                                </span>
-                                <button><Star size={13} /></button>
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                Last edited 2 mins ago
-                            </p>
-                        </div> */}
+                        <DocumentTitleEditor documentId={document.id} initialTitle={document.title} updatedAt={document.updatedAt} />
+
                     </div>
 
                     {/* RIGHT */}

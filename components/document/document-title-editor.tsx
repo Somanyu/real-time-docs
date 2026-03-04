@@ -1,14 +1,24 @@
 "use client"
 
+import getRelativeTime from "@/lib/get-relative-time";
 import { useDocumentSaveStore } from "@/store/document-save-store";
 import { DocumentTitleProps } from "@/types/document";
 import { Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export function DocumentTitleEditor({ documentId, initialTitle }: Readonly<DocumentTitleProps>) {
+export function DocumentTitleEditor({ documentId, initialTitle, updatedAt }: Readonly<DocumentTitleProps>) {
     const [title, setTitle] = useState<string>(initialTitle)
     const [baselineTitle, setBaselineTitle] = useState<string>(initialTitle)
     const [isEditing, setIsEditing] = useState<boolean>(false)
+    const [lastEditedText, setLastEditedText] = useState(getRelativeTime(new Date(updatedAt)))
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setLastEditedText(getRelativeTime(new Date(updatedAt)))
+        }, 60000)
+
+        return () => clearInterval(interval)
+    }, [updatedAt])
 
     const setDocumentStatus = useDocumentSaveStore((s) => s.setStatus)
     const isOnline = useDocumentSaveStore((s) => s.isOnline)
@@ -33,6 +43,7 @@ export function DocumentTitleEditor({ documentId, initialTitle }: Readonly<Docum
 
             if (currentSaveId === saveIdRef.current) {
                 setBaselineTitle(trimmed)
+                setLastEditedText("just now")
                 setDocumentStatus("saved")
             }
         } catch (error) {
@@ -100,7 +111,7 @@ export function DocumentTitleEditor({ documentId, initialTitle }: Readonly<Docum
                 <button><Star size={13} /></button>
             </div>
             <p className="text-xs text-muted-foreground">
-                Last edited 2 mins ago
+                Last edited {lastEditedText}
             </p>
         </div>
     )
