@@ -31,7 +31,8 @@ model User {
   activities  ActivityLog[]
 
   lastVisitedWorkspaceId String? // nullable
-  lastVisitedWorkspace   Workspace? @relation(fields: [lastVisitedWorkspaceId], references: [id])
+  lastVisitedWorkspace   Workspace?     @relation(fields: [lastVisitedWorkspaceId], references: [id])
+  documentStars          DocumentStar[]
 }
 
 model Workspace {
@@ -85,9 +86,10 @@ model Document {
   createdBy   User   @relation("CreatedDocuments", fields: [createdById], references: [id])
   createdById String
 
-  versions   DocumentVersion[]
-  shareLinks ShareLink[]
-  activities ActivityLog[]
+  versions      DocumentVersion[]
+  shareLinks    ShareLink[]
+  activities    ActivityLog[]
+  documentStars DocumentStar[]
 
   @@index([workspaceId])
   @@index([createdById])
@@ -148,5 +150,19 @@ model ActivityLog {
   userId String
 
   @@index([workspaceId])
+  @@index([documentId])
+}
+
+model DocumentStar {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+
+  @@unique([userId, documentId])
   @@index([documentId])
 }

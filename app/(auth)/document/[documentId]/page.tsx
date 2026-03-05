@@ -21,7 +21,16 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
 
     const document = await prisma.document.findUnique({
         where: { id: documentId },
+        include: {
+            documentStars: {
+                where: {
+                    user: { email: session.user.email },
+                },
+            },
+        },
     })
+
+    const isStarred = document?.documentStars && document.documentStars.length > 0
 
     if (!document) {
         notFound()
@@ -53,7 +62,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
                             <Image src="/docs.svg" width={50} height={50} alt="Docs icon" />
                         </div>
 
-                        <DocumentTitleEditor documentId={document.id} initialTitle={document.title} updatedAt={document.updatedAt} />
+                        <DocumentTitleEditor documentId={document.id} initialTitle={document.title} updatedAt={document.updatedAt} isStarred={isStarred!} />
 
                     </div>
 

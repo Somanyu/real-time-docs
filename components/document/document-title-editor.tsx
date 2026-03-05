@@ -6,11 +6,12 @@ import { DocumentTitleProps } from "@/types/document";
 import { Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export function DocumentTitleEditor({ documentId, initialTitle, updatedAt }: Readonly<DocumentTitleProps>) {
+export function DocumentTitleEditor({ documentId, initialTitle, updatedAt, isStarred }: Readonly<DocumentTitleProps>) {
     const [title, setTitle] = useState<string>(initialTitle)
     const [baselineTitle, setBaselineTitle] = useState<string>(initialTitle)
     const [isEditing, setIsEditing] = useState<boolean>(false)
     const [lastEditedText, setLastEditedText] = useState(getRelativeTime(new Date(updatedAt)))
+    const [starred, setStarred] = useState<boolean>(isStarred)
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -100,7 +101,7 @@ export function DocumentTitleEditor({ documentId, initialTitle, updatedAt }: Rea
                                 setIsEditing(false)
                             }
                         }}
-                        className="bg-transparent outline-none text-sm font-semibold"
+                        className="bg-transparent outline-none text-sm font-semibold w-1/2"
                     />
                 ) : (
                     <button onClick={() => setIsEditing(true)} className="text-sm font-semibold truncate flex items-center gap-x-1.5">
@@ -108,7 +109,15 @@ export function DocumentTitleEditor({ documentId, initialTitle, updatedAt }: Rea
                     </button>
                 )}
 
-                <button><Star size={13} /></button>
+                <button
+                    onClick={async () => {
+                        const res = await fetch(`/api/document/${documentId}/star`, {
+                            method: "POST",
+                        })
+                        const data = await res.json()
+                        setStarred(data.starred)
+                    }}
+                ><Star size={13} className={starred ? "fill-yellow-400 text-yellow-400" : ""} /></button>
             </div>
             <p className="text-xs text-muted-foreground">
                 Last edited {lastEditedText}

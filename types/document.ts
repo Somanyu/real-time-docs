@@ -1,7 +1,8 @@
 export interface DocumentTitleProps {
     documentId: string,
     initialTitle: string,
-    updatedAt: Date
+    updatedAt: Date,
+    isStarred: boolean
 }
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error" | "offline"
