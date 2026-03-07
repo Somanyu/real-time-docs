@@ -79,7 +79,7 @@ export function DocumentTitleEditor({ documentId, initialTitle, updatedAt, isSta
     }
 
     if (!isOnline) {
-        return
+        return null
     }
 
     return (
