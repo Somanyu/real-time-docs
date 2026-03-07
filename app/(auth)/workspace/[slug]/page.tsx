@@ -4,9 +4,10 @@ import prisma from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { WorkspacePageProps } from "@/types/workspace"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { RecentDocuments } from "@/components/workspace/recent-documents"
+import { AllDocuments } from "@/components/workspace/all-documents"
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
@@ -23,20 +24,19 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
         where: { slug },
     })
 
-    if (!workspace) {
-        redirect("/dashboard")
-    }
-
     // Fetch documents
     const documents = await prisma.document.findMany({
         where: {
-            workspaceId: workspace.id,
+            workspaceId: workspace?.id,
             isArchived: false,
         },
         orderBy: {
             updatedAt: "desc",
         },
     })
+
+    const recentDocuments = documents.slice(0, 4)
+
 
     return (
         <>
@@ -76,7 +76,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                                 orientation="vertical"
                                 className="mr-2 data-[orientation=vertical]:h-4"
                             />
-                            <Breadcrumb>
+                            {/* <Breadcrumb>
                                 <BreadcrumbList>
                                     <BreadcrumbItem className="hidden md:block">
                                         <BreadcrumbLink href="#">
@@ -88,16 +88,18 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                                         <BreadcrumbPage>Data Fetching</BreadcrumbPage>
                                     </BreadcrumbItem>
                                 </BreadcrumbList>
-                            </Breadcrumb>
+                            </Breadcrumb> */}
                         </div>
                     </header>
-                    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                            <div className="bg-muted/50 aspect-video rounded-xl" />
-                            <div className="bg-muted/50 aspect-video rounded-xl" />
-                            <div className="bg-muted/50 aspect-video rounded-xl" />
-                        </div>
-                        <div className="bg-muted/50 min-h-screen flex-1 rounded-xl md:min-h-min" />
+
+                    <div className="p-6 space-y-10">
+
+                        {/* Recent Documents */}
+                        <RecentDocuments documents={recentDocuments} />
+
+                        {/* All Documents */}
+                        <AllDocuments documents={documents} workspaceSlug={workspace!.slug} />
+
                     </div>
                 </SidebarInset>
             </SidebarProvider>
