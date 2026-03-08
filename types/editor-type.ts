@@ -16,6 +16,7 @@ export type BlockFormat =
 
 export interface SlateEditorProps {
     initialValue: Descendant[],
+    documentId: string,
 }
 
 export interface MarkButtonProps {

@@ -95,9 +95,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
                 <div className="flex-1 relative overflow-auto">
                     <div className="absolute inset-0 overflow-auto">
                         <div className="w-full mx-auto px-4 md:px-8 pb-32">
-                            <SlateEditor
-                                initialValue={initialValue}
-                            />
+                            <SlateEditor documentId={document.id} initialValue={initialValue} />
                         </div>
                     </div>
                 </div>

@@ -12,11 +12,11 @@ export async function POST(req: Request, context: { params: Promise<{ documentId
 
     const { documentId } = await context.params
 
-    const { title } = await req.json()
+    const { title, content } = await req.json()
 
-    if (!title || typeof title !== "string") {
-        return NextResponse.json({ error: "Invalid title" }, { status: 400 })
-    }
+    // if (!title || typeof title !== "string") {
+    //     return NextResponse.json({ error: "Invalid title" }, { status: 400 })
+    // }
 
     const document = await prisma.document.findFirst({
         where: {
@@ -38,7 +38,10 @@ export async function POST(req: Request, context: { params: Promise<{ documentId
 
     const updated = await prisma.document.update({
         where: { id: document.id },
-        data: { title },
+        data: {
+            ...(title && { title }),
+            ...(content && { content }),
+        },
     })
 
     await prisma.activityLog.create({
