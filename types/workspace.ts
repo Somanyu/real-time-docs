@@ -20,3 +20,9 @@ export interface CreateWorkspaceDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
+
+export type AISummaryModalProps = {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    documentId: string | null
+}
