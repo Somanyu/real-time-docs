@@ -25,3 +25,16 @@ export interface MarkButtonProps {
 }
 
 export type ListType = (typeof LIST_TYPES)[number]
+
+export type SlateText = {
+    text: string
+    bold?: boolean
+    italic?: boolean
+    underline?: boolean
+    code?: boolean
+}
+
+export type SlateElement = {
+    type?: string
+    children: SlateText[]
+}

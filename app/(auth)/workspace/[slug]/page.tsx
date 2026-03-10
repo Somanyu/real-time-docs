@@ -39,44 +39,18 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
 
     return (
-        <>
-            {/* <div className="p-8 space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">{workspace.name}</h1>
 
-                <Link href={`/workspace/${workspace.slug}/new`} className="px-4 py-2 bg-black text-white rounded-md">+ New Document</Link>
-                <LogoutButton />
-            </div>
-
-            {documents.length === 0 ? (
-                <div className="border rounded-lg p-10 text-center text-muted-foreground">
-                    No documents yet.
-                    <br />
-                    Create your first document 🚀
-                </div>
-            ) : (
-                <div className="grid gap-4">
-                    {documents.map((doc) => (
-                        <Link key={doc.id} href={`/workspace/${workspace.slug}/document/${doc.id}`} className="border rounded-md p-4 hover:bg-muted transition">
-                            <div className="font-medium">{doc.title}</div>
-                            <div className="text-sm text-muted-foreground">Updated {doc.updatedAt.toDateString()}</div>
-                        </Link>
-                    ))}
-                </div>
-            )}
-        </div> */}
-
-            <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                        <div className="flex items-center gap-2 px-4">
-                            <SidebarTrigger className="-ml-1" />
-                            <Separator
-                                orientation="vertical"
-                                className="mr-2 data-[orientation=vertical]:h-4"
-                            />
-                            {/* <Breadcrumb>
+        <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+                <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                    <div className="flex items-center gap-2 px-4">
+                        <SidebarTrigger className="-ml-1" />
+                        <Separator
+                            orientation="vertical"
+                            className="mr-2 data-[orientation=vertical]:h-4"
+                        />
+                        {/* <Breadcrumb>
                                 <BreadcrumbList>
                                     <BreadcrumbItem className="hidden md:block">
                                         <BreadcrumbLink href="#">
@@ -89,20 +63,19 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                                     </BreadcrumbItem>
                                 </BreadcrumbList>
                             </Breadcrumb> */}
-                        </div>
-                    </header>
-
-                    <div className="p-6 space-y-10">
-
-                        {/* Recent Documents */}
-                        <RecentDocuments documents={recentDocuments} />
-
-                        {/* All Documents */}
-                        <AllDocuments documents={documents} workspaceSlug={workspace!.slug} />
-
                     </div>
-                </SidebarInset>
-            </SidebarProvider>
-        </>
+                </header>
+
+                <div className="p-6 space-y-10">
+
+                    {/* Recent Documents */}
+                    <RecentDocuments documents={recentDocuments} />
+
+                    {/* All Documents */}
+                    <AllDocuments documents={documents} workspaceSlug={workspace!.slug} />
+
+                </div>
+            </SidebarInset>
+        </SidebarProvider>
     )
 }

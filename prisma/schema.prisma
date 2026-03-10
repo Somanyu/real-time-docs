@@ -91,6 +91,8 @@ model Document {
   activities    ActivityLog[]
   documentStars DocumentStar[]
 
+  preview Json?
+
   @@index([workspaceId])
   @@index([createdById])
 }

@@ -9,6 +9,20 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card"
 import { SparklesIcon, SparklesIconHandle } from "../ui/sparkles-icon"
 import { useRef, useState } from "react"
 import { AISummaryModal } from "./ai-summary-modal"
+import { DocumentPreview } from "../editor/document-preview"
+
+type SlateElement = {
+    type?: string
+    children: SlateText[]
+}
+
+type SlateText = {
+    text: string
+    bold?: boolean
+    italic?: boolean
+    underline?: boolean
+    code?: boolean
+}
 
 export function RecentDocuments({ documents }: Readonly<{ documents: Document[] }>) {
 
@@ -34,11 +48,20 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
             <div className="grid gap-6 md:grid-cols-4">
                 {documents.map((doc: Document) => (
                     <a key={doc.id} href={`/document/${doc.id}`} target="_blank" rel="noopener noreferrer" className="group rounded-xl border hover:shadow-sm transition block">
-                        <div className="aspect-4/3 bg-orange-100 rounded-t-xl flex items-center justify-center">
-                            <FileText className="h-8 w-8 text-muted-foreground" />
-                        </div>
 
-                        <div className="p-4 space-y-4">
+                        {doc.preview && (doc.preview as SlateElement[]).length > 0 ? (
+                            <div className="aspect-4/3 flex items-center justify-center p-2 overflow-hidden scale-[0.75]!" style={{ scale: "0.85" }}>
+                                <div className="h-full w-full origin-top-left">
+                                    <DocumentPreview content={doc.preview as SlateElement[]} />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="aspect-4/3 bg-orange-100 rounded-t-xl flex items-center justify-center p-2">
+                                <FileText className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                        )}
+
+                        <div className="p-4 space-y-4 border-t">
                             <p className="font-medium line-clamp-1">{doc.title}</p>
 
                             <div className="flex items-center justify-between">
@@ -83,6 +106,9 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
                     </a>
                 ))}
             </div>
+
+
+
 
             <AISummaryModal open={summaryOpen} onOpenChange={setSummaryOpen} documentId={selectedDocId} />
         </div>
