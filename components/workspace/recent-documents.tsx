@@ -10,6 +10,7 @@ import { SparklesIcon, SparklesIconHandle } from "../ui/sparkles-icon"
 import { useRef, useState } from "react"
 import { AISummaryModal } from "./ai-summary-modal"
 import { DocumentPreview } from "../editor/document-preview"
+import { DeleteDocumentDialog } from "../document/delete-document-dialog"
 
 type SlateElement = {
     type?: string
@@ -28,6 +29,7 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
 
     const [summaryOpen, setSummaryOpen] = useState<boolean>(false)
     const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+    const [documentToDelete, setDocumentToDelete] = useState<{ id: string, title: string } | null>(null)
 
     const sparkleRef = useRef<SparklesIconHandle>(null)
 
@@ -94,7 +96,16 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
                                                 Archive
                                             </Button>
 
-                                            <Button variant="ghost" className="justify-start gap-2 text-red-500">
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    setDocumentToDelete({
+                                                        id: doc.id,
+                                                        title: doc.title
+                                                    })
+                                                }}
+                                                variant="ghost" className="justify-start gap-2 text-red-500">
                                                 <Trash className="h-4 w-4" />
                                                 Delete
                                             </Button>
@@ -107,10 +118,8 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
                 ))}
             </div>
 
-
-
-
             <AISummaryModal open={summaryOpen} onOpenChange={setSummaryOpen} documentId={selectedDocId} />
+            <DeleteDocumentDialog document={documentToDelete} onClose={() => setDocumentToDelete(null)} />
         </div>
     )
 }

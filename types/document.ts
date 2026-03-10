@@ -13,3 +13,11 @@ export interface DocumentSaveState {
     setStatus: (status: SaveStatus) => void
     setOnline: (value: boolean) => void
 }
+
+export type DeleteDocumentDialogProps = {
+    document: {
+        id: string
+        title: string
+    } | null
+    onClose: () => void
+}
