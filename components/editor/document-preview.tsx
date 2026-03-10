@@ -24,12 +24,28 @@ export function DocumentPreview({ content }: Readonly<{ content: SlateElement[] 
                 const children = renderChildren(node.children)
 
                 switch (node.type) {
-                    case "heading":
+
+                    case "heading-one":
                         return (
-                            <h3 key={i + 1} className="font-semibold text-sm">
+                            <h1 key={i + 1} className="text-4xl font-bold my-6">
+                                {children}
+                            </h1>
+                        )
+
+                    case "heading-two":
+                        return (
+                            <h2 key={i + 1} className="text-3xl font-semibold my-5">
+                                {children}
+                            </h2>
+                        )
+
+                    case "heading-three":
+                        return (
+                            <h3 key={i + 1} className="text-2xl font-semibold my-4">
                                 {children}
                             </h3>
                         )
+
 
                     case "list-item":
                         return (

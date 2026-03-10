@@ -50,7 +50,7 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
                     <a key={doc.id} href={`/document/${doc.id}`} target="_blank" rel="noopener noreferrer" className="group rounded-xl border hover:shadow-sm transition block">
 
                         {doc.preview && (doc.preview as SlateElement[]).length > 0 ? (
-                            <div className="aspect-4/3 flex items-center justify-center p-2 overflow-hidden scale-[0.75]!" style={{ scale: "0.85" }}>
+                            <div className="aspect-4/3 flex items-center justify-center p-2 overflow-hidden scale-[0.75]!" style={{ scale: "0.75" }}>
                                 <div className="h-full w-full origin-top-left">
                                     <DocumentPreview content={doc.preview as SlateElement[]} />
                                 </div>

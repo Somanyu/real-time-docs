@@ -9,12 +9,19 @@ export function useDocumentAutosave(documentId: string, value: Descendant[]) {
     const setStatus = useDocumentSaveStore((s) => s.setStatus)
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-    const saveIdRef = useRef(0)
+    const saveIdRef = useRef<number>(0)
+    const hasMountedRef = useRef<boolean>(false)
     const lastSavedRef = useRef<string>("")
 
     useEffect(() => {
         const serialized = JSON.stringify(value)
+
+        // skip first render
+        if (!hasMountedRef.current) {
+            hasMountedRef.current = true
+            lastSavedRef.current = serialized
+            return
+        }
 
         if (serialized === lastSavedRef.current) return
 
