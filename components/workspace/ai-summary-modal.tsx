@@ -67,12 +67,12 @@ export function AISummaryModal({ open, onOpenChange, documentId }: Readonly<AISu
                 <div className="min-h-30 space-y-3">
 
                     {loading && (
-                        <>
+                        <div className="flex w-full max-w-xs flex-col gap-2">
                             <Skeleton className="h-4 w-full" />
                             <Skeleton className="h-4 w-[90%]" />
                             <Skeleton className="h-4 w-[80%]" />
                             <Skeleton className="h-4 w-[75%]" />
-                        </>
+                        </div>
                     )}
 
                     {!loading && (

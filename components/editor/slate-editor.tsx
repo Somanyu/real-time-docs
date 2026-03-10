@@ -1,11 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { createEditor, Descendant, Node } from "slate"
+import { createEditor, Descendant, Editor, Node, Transforms } from "slate"
 import { Slate, Editable, withReact, RenderElementProps, RenderLeafProps } from "slate-react"
 import { withHistory } from "slate-history"
 import { Separator } from "@/components/ui/separator"
-import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered } from "lucide-react"
+import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered, SpellCheck, Sparkles } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
 import { SlateEditorProps } from "@/types/editor-type"
 import { BASE_HEIGHT, BASE_WIDTH, ZOOM_LEVELS } from "@/constants/editor"
@@ -22,6 +22,9 @@ import { useOnlineStatus } from "@/hooks/use-online-status"
 import { useDocumentAutosave } from "@/hooks/use-document-autosave"
 import { BlockElement } from "./block-element"
 import { Leaf } from "./leaf-element"
+import { Button } from "../ui/button"
+import { RewriteModal } from "./rewrite-modal"
+import { useAIRewrite } from "@/hooks/use-ai-rewrite"
 
 /* ======================== */
 /* MAIN EDITOR */
@@ -36,6 +39,8 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
     const [value, setValue] = useState<Descendant[]>(initialValue)
     const [zoom, setZoom] = useState<number>(100)
     const [stats, setStats] = useState({ words: 0, characters: 0 })
+
+    const { rewriteOpen, setRewriteOpen, options, notes, loading, openRewrite, retryRewrite, applyRewrite } = useAIRewrite(editor)
 
     const calculateStats = (value: Descendant[]) => {
         const text = value
@@ -74,6 +79,43 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
         (props: RenderLeafProps) => <Leaf {...props} />,
         []
     )
+
+    const runAIAction = async (endpoint: string) => {
+        if (!editor.selection) return
+
+        const selectedText = Editor.string(editor, editor.selection)
+
+        const res = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                text: selectedText.slice(0, 4000),
+            }),
+        })
+
+        const data = await res.json()
+
+        const result = data.rewritten || data.corrected
+
+        if (!result) return
+
+        Transforms.delete(editor, { at: editor.selection })
+        Transforms.insertText(editor, result)
+    }
+
+    const handleRewrite = () => {
+        if (!editor.selection) return
+
+        const text = Editor.string(editor, editor.selection)
+
+        openRewrite(text, editor.selection)
+    }
+
+    const handleGrammar = () => {
+        runAIAction("/api/ai/grammar")
+    }
 
     return (
         <Slate editor={editor} initialValue={value} onChange={(newValue) => { setValue(newValue) }}>
@@ -129,6 +171,11 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
                     <UndoButton />
                     <RedoButton />
 
+                    <Separator orientation="vertical" className="h-5 w-px" />
+
+                    <Button onClick={handleRewrite}><Sparkles /></Button>
+                    <Button onClick={handleGrammar}><SpellCheck /></Button>
+
                 </div>
             </div>
 
@@ -162,6 +209,16 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
                     {documentStatus === "idle" && "Saved"}
                 </span>
             </div>
+
+            <RewriteModal
+                open={rewriteOpen}
+                setOpen={setRewriteOpen}
+                options={options}
+                notes={notes}
+                loading={loading}
+                onChoose={applyRewrite}
+                onRetry={retryRewrite}
+            />
 
         </Slate>
     )
