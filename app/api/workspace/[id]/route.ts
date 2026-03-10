@@ -53,13 +53,13 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
                 select: {
                     workspace: {
                         select: {
-                            slug: true
+                            id: true
                         }
                     }
                 }
             })
 
-            newWorkspaceIdForCurrentUser = otherWorkspace?.workspace.slug ?? null
+            newWorkspaceIdForCurrentUser = otherWorkspace?.workspace.id ?? null
 
             // reset last visited workspace for affected users
             await tx.user.updateMany({
@@ -78,10 +78,17 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
         })
 
+        const redirectWorkspace = newWorkspaceIdForCurrentUser
+            ? await prisma.workspace.findUnique({
+                where: { id: newWorkspaceIdForCurrentUser },
+                select: { slug: true }
+            })
+            : null
+
         return NextResponse.json(
             {
                 message: "Workspace deleted successfully",
-                redirectWorkspaceId: newWorkspaceIdForCurrentUser
+                redirectWorkspaceId: redirectWorkspace?.slug ?? null
             },
             { status: 200 }
         )

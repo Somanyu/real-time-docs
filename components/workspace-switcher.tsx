@@ -67,12 +67,9 @@ export function WorkspaceSwitcher() {
 
       toast.success("Workspace deleted")
 
-      // 🔥 If user has another workspace → redirect
+      // If user has another workspace → redirect
       if (data.redirectWorkspaceId) {
         router.push(`/workspace/${data.redirectWorkspaceId}`)
-      } else {
-        // No workspace left
-        router.push("/create-workspace")
       }
 
       router.refresh()
@@ -132,7 +129,9 @@ export function WorkspaceSwitcher() {
                   <DropdownMenuItem key={ws.id} onClick={() => handleSwitch(ws)} className="gap-2 p-2 group">
                     <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden" dangerouslySetInnerHTML={{ __html: svg }} />
                     {ws.name}
-                    <DropdownMenuShortcut className="group-hover:flex hidden items-center"><button onClick={(e) => { e.stopPropagation(); setWorkspaceToDelete(ws) }}><Trash2Icon size={5} /></button></DropdownMenuShortcut>
+                    {workspace.length > 1 &&
+                      <DropdownMenuShortcut className="group-hover:flex hidden items-center"><button onClick={(e) => { e.stopPropagation(); setWorkspaceToDelete(ws) }}><Trash2Icon size={5} /></button></DropdownMenuShortcut>
+                    }
                   </DropdownMenuItem>
                 )
               })}
