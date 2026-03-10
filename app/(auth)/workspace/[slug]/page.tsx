@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { RecentDocuments } from "@/components/workspace/recent-documents"
 import { AllDocuments } from "@/components/workspace/all-documents"
+import EmptyDocumentState from "@/components/document/empty-document-state"
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
@@ -66,15 +67,21 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                     </div>
                 </header>
 
-                <div className="p-6 space-y-10">
+                {documents.length > 0 ? (
+                    <div className="p-6 space-y-10">
 
-                    {/* Recent Documents */}
-                    <RecentDocuments documents={recentDocuments} />
+                        {/* Recent Documents */}
+                        <RecentDocuments documents={recentDocuments} />
 
-                    {/* All Documents */}
-                    <AllDocuments documents={documents} workspaceSlug={workspace!.slug} />
+                        {/* All Documents */}
+                        <AllDocuments documents={documents} workspaceSlug={workspace!.slug} />
 
-                </div>
+                    </div>
+
+                ) : (
+                    <EmptyDocumentState />
+                )}
+
             </SidebarInset>
         </SidebarProvider>
     )
