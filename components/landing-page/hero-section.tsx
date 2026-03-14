@@ -46,7 +46,7 @@ export default function LandingPageHeroSection() {
                             <p className="text-base text-gray-500 font-inter">Experience the fastest real-time collaborative editor built for professional teams. Write, plan, and create together without the lag.</p>
                         </div>
 
-                        <div className="px-8 sm:items-center sm:justify-center sm:px-0 sm:space-x-5 sm:flex">
+                        <div className="flex flex-col gap-3 px-8 sm:flex-row sm:justify-center sm:px-0 sm:gap-5">
                             <Button onClick={() => handleRedirect("signup")} size="lg">Start documenting <Pencil className="size-4 ml-1" /></Button>
                             <Button onClick={() => handleRedirect("demo")} size="lg">Watch demo<Play className="size-4 ml-1" /></Button>
                         </div>
