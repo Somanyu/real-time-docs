@@ -11,19 +11,7 @@ import { useRef, useState } from "react"
 import { AISummaryModal } from "./ai-summary-modal"
 import { DocumentPreview } from "../editor/document-preview"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
-
-type SlateElement = {
-    type?: string
-    children: SlateText[]
-}
-
-type SlateText = {
-    text: string
-    bold?: boolean
-    italic?: boolean
-    underline?: boolean
-    code?: boolean
-}
+import { SlateElement } from "@/types/editor-type"
 
 export function RecentDocuments({ documents }: Readonly<{ documents: Document[] }>) {
 

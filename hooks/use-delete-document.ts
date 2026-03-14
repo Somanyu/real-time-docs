@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
 import { deleteDocument } from "@/server/document/delete-document"
+import { toast } from "sonner"
 
 export function useDeleteDocument() {
     const [isDeleting, setIsDeleting] = useState(false)
@@ -13,21 +13,16 @@ export function useDeleteDocument() {
 
             const res = await deleteDocument(documentId)
 
-            if (!res.success) {
-                toast.warning("Cannot delete document.")
+            if (res.success) {
+                toast.success("Document deleted")
             }
 
-            toast.success("Document deleted")
-        } catch (error) {
-            console.error(error)
+        } catch {
             toast.error("Failed to delete document")
         } finally {
             setIsDeleting(false)
         }
     }
 
-    return {
-        handleDelete,
-        isDeleting
-    }
+    return { handleDelete, isDeleting }
 }
