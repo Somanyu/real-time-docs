@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, Trash, Archive, MoreVertical } from "lucide-react"
+import { Trash, Archive, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import getRelativeTime from "@/lib/get-relative-time"
 import { Avatar, AvatarFallback } from "../ui/avatar"
@@ -13,6 +13,7 @@ import { SlateElement } from "@/types/editor-type"
 import { DocumentWithAuthor } from "@/types/document"
 import { useToggleDocumentArchive } from "@/hooks/use-toggle-document-archive"
 import { MenuActionLabel } from "../document/menu-action-label"
+import { DocumentIcon } from "../document/document-icon"
 import { SummariseActionLabel } from "../document/summarise-action-label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
@@ -56,9 +57,14 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
                                     </div>
                                 </div>
                             ) : (
-                                <div className="aspect-4/3 rounded-t-xl bg-orange-100 p-2">
+                                <div className="aspect-4/3 rounded-t-xl bg-muted/40 p-2">
                                     <div className="flex h-full items-center justify-center">
-                                        <FileText className="h-8 w-8 text-muted-foreground" />
+                                        <DocumentIcon
+                                            iconSeed={doc.id}
+                                            size={40}
+                                            withBackground
+                                            containerClassName="size-18 rounded-xl p-2"
+                                        />
                                     </div>
                                 </div>
                             )}

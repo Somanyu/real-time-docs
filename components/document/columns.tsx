@@ -1,13 +1,14 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Archive, ArrowUpDown, FileText, MoreHorizontal, Trash } from "lucide-react"
+import { Archive, ArrowUpDown, MoreHorizontal, Trash } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DocumentColumnsOptions, DocumentWithAuthor } from "@/types/document"
 import getRelativeTime from "@/lib/get-relative-time"
+import { DocumentIcon } from "./document-icon"
 import { MenuActionLabel } from "./menu-action-label"
 import { SummariseActionLabel } from "./summarise-action-label"
 
@@ -28,7 +29,7 @@ export const columns = ({
 
                 return (
                     <Link href={`/document/${doc.id}`} className="flex items-center gap-3 font-medium hover:underline">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <DocumentIcon iconSeed={doc.id} size={20} className="h-5 w-5 rounded-sm" />
                         {doc.title}
                     </Link>
                 )

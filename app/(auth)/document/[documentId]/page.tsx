@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Share2 } from "lucide-react"
 import { SlateEditor } from "@/components/editor/slate-editor"
 import { Descendant } from "slate"
-import Image from "next/image"
+import { DocumentIcon } from "@/components/document/document-icon"
 import { DocumentTitleEditor } from "@/components/document/document-title-editor"
 
 export default async function DocumentPage({ params }: { params: Promise<{ documentId: string }> }) {
@@ -58,9 +58,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
 
                     {/* LEFT */}
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="size-10 rounded-md flex items-center justify-center text-primary font-semibold">
-                            <Image src="/docs.svg" width={50} height={50} alt="Docs icon" />
-                        </div>
+                        <DocumentIcon iconSeed={document.id} size={40} withBackground containerClassName="size-10 rounded-md" />
 
                         <DocumentTitleEditor documentId={document.id} initialTitle={document.title} updatedAt={document.updatedAt} isStarred={isStarred!} />
 
