@@ -13,8 +13,7 @@ import { DocumentWithAuthor } from "@/types/document"
 import { getWorkspaceOrThrow } from "@/lib/server/get-workspace"
 
 export default async function WorkspacePage({ params, searchParams }: WorkspacePageProps) {
-
-    const { slug } = await params;
+    const { slug } = await params
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.email || !session.user.id) {
@@ -56,11 +55,34 @@ export default async function WorkspacePage({ params, searchParams }: WorkspaceP
 
     const recentDocuments = documents.slice(0, 4)
     const isFilteredView = filter !== "all"
-    const documentListTitle = filter === "favorites" ? "Favorite Documents" : filter === "recent" ? "Recent Documents" : "All Documents"
+    let documentListTitle = "All Documents"
 
+    if (filter === "favorites") {
+        documentListTitle = "Favorite Documents"
+    } else if (filter === "recent") {
+        documentListTitle = "Recent Documents"
+    }
+
+    let pageContent: React.ReactNode
+
+    if (isFilteredView) {
+        pageContent = (
+            <div className="p-6">
+                <AllDocuments documents={documents} title={documentListTitle} />
+            </div>
+        )
+    } else if (documents.length > 0) {
+        pageContent = (
+            <div className="p-6 space-y-10">
+                <RecentDocuments documents={recentDocuments} />
+                <AllDocuments documents={documents} />
+            </div>
+        )
+    } else {
+        pageContent = <EmptyDocumentState />
+    }
 
     return (
-
         <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
@@ -70,26 +92,7 @@ export default async function WorkspacePage({ params, searchParams }: WorkspaceP
                         <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
                     </div>
                 </header>
-
-                {!isFilteredView && documents.length > 0 ? (
-                    <div className="p-6 space-y-10">
-
-                        {/* Recent Documents */}
-                        <RecentDocuments documents={recentDocuments} />
-
-                        {/* All Documents */}
-                        <AllDocuments documents={documents} />
-
-                    </div>
-
-                ) : isFilteredView ? (
-                    <div className="p-6">
-                        <AllDocuments documents={documents} title={documentListTitle} />
-                    </div>
-                ) : (
-                    <EmptyDocumentState />
-                )}
-
+                {pageContent}
             </SidebarInset>
         </SidebarProvider>
     )
