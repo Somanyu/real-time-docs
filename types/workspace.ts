@@ -26,6 +26,12 @@ export interface CreateWorkspaceDialogProps {
     onOpenChange: (open: boolean) => void
 }
 
+export type CreateWorkspaceResponse = {
+    addedCollaborators: string[]
+    skippedCollaborators: string[]
+    slug: string
+}
+
 export type AISummaryModalProps = {
     open: boolean
     onOpenChange: (open: boolean) => void

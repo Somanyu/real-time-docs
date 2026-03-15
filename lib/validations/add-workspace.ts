@@ -16,7 +16,7 @@ export const createWorkspaceSchema = z.object({
             })
         )
         .refine(
-            (emails) => new Set(emails).size === emails.length,
+            (emails) => new Set(emails.map((collaborator) => collaborator.email)).size === emails.length,
             { message: "Duplicate email addressed are not allowed" }
         ),
     sendInvites: z.boolean()

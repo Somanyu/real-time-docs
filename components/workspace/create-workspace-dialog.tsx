@@ -10,7 +10,7 @@ import { Controller, useFieldArray, useForm } from "react-hook-form"
 import { createWorkspaceSchema, collaboratorEmailSchema, CreateWorkspaceInput } from "@/lib/validations/add-workspace"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Field, FieldError, FieldLabel } from "../ui/field"
-import { CreateWorkspaceDialogProps } from "@/types/workspace"
+import { CreateWorkspaceDialogProps, CreateWorkspaceResponse } from "@/types/workspace"
 import z from "zod"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -34,6 +34,9 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: Readonly<CreateWor
         name: "collaborators"
     })
 
+    /**
+     * Validates and appends the current collaborator email to the form list.
+     */
     const addCollaborator = () => {
         const email = emailInput.trim()
 
@@ -63,6 +66,9 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: Readonly<CreateWor
         form.clearErrors("collaborators")
     }
 
+    /**
+     * Creates the workspace and adds any existing-user collaborators as editors.
+     */
     async function handleCreateWorkspaceSubmit(data: z.infer<typeof createWorkspaceSchema>) {
         try {
             const res = await fetch("/api/workspace", {
@@ -71,17 +77,28 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: Readonly<CreateWor
                 body: JSON.stringify(data)
             })
 
-            const workspace = await res.json()
+            const result: CreateWorkspaceResponse = await res.json()
 
             if (res.ok) {
-                toast.success("Created workspace")
-                router.push(`/workspace/${workspace.slug}`)
+                if (result.skippedCollaborators.length > 0) {
+                    toast.success(
+                        `Workspace created. Added ${result.addedCollaborators.length} collaborator(s). ${result.skippedCollaborators.length} email(s) were skipped because no account was found.`
+                    )
+                } else if (result.addedCollaborators.length > 0) {
+                    toast.success(`Workspace created and ${result.addedCollaborators.length} collaborator(s) added.`)
+                } else {
+                    toast.success("Created workspace")
+                }
+
+                router.push(`/workspace/${result.slug}`)
             } else {
                 toast.warning("Failed to create workspace")
+                return
             }
 
             onOpenChange(false)
-            form.reset();
+            form.reset()
+            setEmailInput("")
         } catch (error) {
             toast.error("Error in creating workspace")
             console.log("Error in creating workspace: ", error)
