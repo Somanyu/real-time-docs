@@ -4,7 +4,6 @@ import { FileText, Trash, Archive, MoreVertical } from "lucide-react"
 import getRelativeTime from "@/lib/get-relative-time"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card"
 import { useState } from "react"
 import { AISummaryModal } from "./ai-summary-modal"
 import { DocumentPreview } from "../editor/document-preview"
@@ -14,6 +13,7 @@ import { DocumentWithAuthor } from "@/types/document"
 import { useToggleDocumentArchive } from "@/hooks/use-toggle-document-archive"
 import { MenuActionLabel } from "../document/menu-action-label"
 import { SummariseActionLabel } from "../document/summarise-action-label"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 
 export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWithAuthor[] }>) {
 
@@ -30,6 +30,25 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
         setSummaryOpen(true)
     }
 
+    /**
+     * Opens the selected document in a new tab from the recent documents grid.
+     */
+    const handleOpenDocument = (documentId: string) => {
+        window.open(`/document/${documentId}`, "_blank", "noopener,noreferrer")
+    }
+
+    /**
+     * Opens the selected document when the user presses Enter or Space on the card.
+     */
+    const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, documentId: string) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+            return
+        }
+
+        event.preventDefault()
+        handleOpenDocument(documentId)
+    }
+
     return (
         <div className="space-y-4">
             <div>
@@ -41,7 +60,14 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
 
             <div className="grid gap-6 md:grid-cols-4">
                 {documents.map((doc: DocumentWithAuthor) => (
-                    <a key={doc.id} href={`/document/${doc.id}`} target="_blank" rel="noopener noreferrer" className="group rounded-xl border hover:shadow-sm transition block">
+                    <div
+                        key={doc.id}
+                        role="link"
+                        tabIndex={0}
+                        onClick={() => handleOpenDocument(doc.id)}
+                        onKeyDown={(event) => handleCardKeyDown(event, doc.id)}
+                        className="group block cursor-pointer rounded-xl border transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
 
                         {doc.preview && (doc.preview as SlateElement[]).length > 0 ? (
                             <div className="aspect-4/3 flex items-center justify-center p-2 overflow-hidden scale-[0.75]!" style={{ scale: "0.75" }}>
@@ -69,63 +95,56 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
                                     </p>
                                 </div>
 
-                                <HoverCard openDelay={100}>
-                                    <HoverCardTrigger asChild>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
                                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
                                             <MoreVertical className="h-4 w-4" />
                                         </Button>
-                                    </HoverCardTrigger>
+                                    </DropdownMenuTrigger>
 
-                                    <HoverCardContent className="w-40 p-2" onClick={(e) => e.stopPropagation()}>
-                                        <div className="flex flex-col gap-1">
-                                            <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSummarize(doc.id) }} variant="ghost" className="justify-start gap-2">
-                                                <SummariseActionLabel className="flex items-center gap-2" />
-                                            </Button>
+                                    <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                                        <DropdownMenuItem onClick={() => handleSummarize(doc.id)}>
+                                            <SummariseActionLabel className="flex items-center gap-2" />
+                                        </DropdownMenuItem>
 
-                                            <Button
-                                                variant="ghost"
-                                                className="justify-start gap-2"
-                                                disabled={isUpdating}
-                                                onClick={async (e) => {
-                                                    e.preventDefault()
-                                                    e.stopPropagation()
-                                                    await toggleArchive({
-                                                        documentId: doc.id,
-                                                        archived: true,
-                                                    })
-                                                }}
-                                            >
-                                                <MenuActionLabel
-                                                    className="flex items-center gap-2"
-                                                    icon={Archive}
-                                                    iconClassName="h-4 w-4 text-muted-foreground"
-                                                    label={isUpdating ? "Archiving..." : "Archive"}
-                                                />
-                                            </Button>
+                                        <DropdownMenuItem
+                                            disabled={isUpdating}
+                                            onClick={async () => {
+                                                await toggleArchive({
+                                                    documentId: doc.id,
+                                                    archived: true,
+                                                })
+                                            }}
+                                        >
+                                            <MenuActionLabel
+                                                className="flex items-center gap-2"
+                                                icon={Archive}
+                                                iconClassName="h-4 w-4 text-muted-foreground"
+                                                label={isUpdating ? "Archiving..." : "Archive"}
+                                            />
+                                        </DropdownMenuItem>
 
-                                            <Button
-                                                onClick={(e) => {
-                                                    e.preventDefault()
-                                                    e.stopPropagation()
-                                                    setDocumentToDelete({
-                                                        id: doc.id,
-                                                        title: doc.title
-                                                    })
-                                                }}
-                                                variant="ghost" className="justify-start gap-2 text-red-500">
-                                                <MenuActionLabel
-                                                    className="flex items-center gap-2"
-                                                    icon={Trash}
-                                                    iconClassName="h-4 w-4 text-red-500"
-                                                    label="Delete"
-                                                />
-                                            </Button>
-                                        </div>
-                                    </HoverCardContent>
-                                </HoverCard>
+                                        <DropdownMenuItem
+                                            className="text-red-500"
+                                            onClick={() => {
+                                                setDocumentToDelete({
+                                                    id: doc.id,
+                                                    title: doc.title
+                                                })
+                                            }}
+                                        >
+                                            <MenuActionLabel
+                                                className="flex items-center gap-2"
+                                                icon={Trash}
+                                                iconClassName="h-4 w-4 text-red-500"
+                                                label="Delete"
+                                            />
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
-                    </a>
+                    </div>
                 ))}
             </div>
 
