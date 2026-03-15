@@ -38,3 +38,19 @@ export type SlateElement = {
     type?: string
     children: SlateText[]
 }
+
+export type Option = {
+    title: string
+    text: string
+}
+
+export interface RewriteModalProps {
+    title?: string
+    open: boolean
+    setOpen: (v: boolean) => void
+    options: Option[]
+    notes: string
+    loading: boolean
+    onChoose: (text: string) => void
+    onRetry: () => void
+}

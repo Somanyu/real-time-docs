@@ -47,8 +47,29 @@ export async function rewriteText(text: string) {
 export async function fixGrammar(text: string) {
     const res = await ai.models.generateContent({
         model: MODEL,
-        contents: `Fix grammar and improve clarity without changing meaning:${text}`,
+        contents: `
+            Fix the grammar of the following text and return ONLY valid JSON.
+
+            Keep the original meaning intact. Offer two options:
+            1. A minimally corrected version
+            2. A slightly more polished version
+
+            Return this exact JSON shape:
+            {
+              "options": [
+                { "title": "Grammar Corrected", "text": "..." },
+                { "title": "Polished", "text": "..." }
+              ],
+              "notes": "Briefly explain what grammar issues were fixed."
+            }
+
+            Text:
+            ${text}
+        `,
     })
 
-    return res.text
+    return (res.text ?? "")
+        .replaceAll("```json", "")
+        .replaceAll("```", "")
+        .trim()
 }

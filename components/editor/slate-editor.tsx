@@ -1,11 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { createEditor, Descendant, Editor, Node, Transforms } from "slate"
+import { createEditor, Descendant, Editor, Node } from "slate"
 import { Slate, Editable, withReact, RenderElementProps, RenderLeafProps } from "slate-react"
 import { withHistory } from "slate-history"
 import { Separator } from "@/components/ui/separator"
-import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered, SpellCheck, Sparkles } from "lucide-react"
+import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered, SpellCheck, PencilLine } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select"
 import { SlateEditorProps } from "@/types/editor-type"
 import { BASE_HEIGHT, BASE_WIDTH, ZOOM_LEVELS } from "@/constants/editor"
@@ -25,6 +25,8 @@ import { Leaf } from "./leaf-element"
 import { Button } from "../ui/button"
 import { RewriteModal } from "./rewrite-modal"
 import { useAIRewrite } from "@/hooks/use-ai-rewrite"
+import { useAIGrammar } from "@/hooks/use-ai-grammar"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 /* ======================== */
 /* MAIN EDITOR */
@@ -41,6 +43,16 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
     const [stats, setStats] = useState({ words: 0, characters: 0 })
 
     const { rewriteOpen, setRewriteOpen, options, notes, loading, openRewrite, retryRewrite, applyRewrite } = useAIRewrite(editor)
+    const {
+        grammarOpen,
+        setGrammarOpen,
+        options: grammarOptions,
+        notes: grammarNotes,
+        loading: grammarLoading,
+        openGrammar,
+        retryGrammar,
+        applyGrammar,
+    } = useAIGrammar(editor)
 
     const calculateStats = (value: Descendant[]) => {
         const text = value
@@ -80,31 +92,6 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
         []
     )
 
-    const runAIAction = async (endpoint: string) => {
-        if (!editor.selection) return
-
-        const selectedText = Editor.string(editor, editor.selection)
-
-        const res = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                text: selectedText.slice(0, 4000),
-            }),
-        })
-
-        const data = await res.json()
-
-        const result = data.rewritten || data.corrected
-
-        if (!result) return
-
-        Transforms.delete(editor, { at: editor.selection })
-        Transforms.insertText(editor, result)
-    }
-
     const handleRewrite = () => {
         if (!editor.selection) return
 
@@ -114,7 +101,11 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
     }
 
     const handleGrammar = () => {
-        runAIAction("/api/ai/grammar")
+        if (!editor.selection) return
+
+        const text = Editor.string(editor, editor.selection)
+
+        openGrammar(text, editor.selection)
     }
 
     return (
@@ -173,8 +164,23 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
 
                     <Separator orientation="vertical" className="h-5 w-px" />
 
-                    <Button onClick={handleRewrite}><Sparkles /></Button>
-                    <Button onClick={handleGrammar}><SpellCheck /></Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={handleRewrite}><PencilLine /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Rewrite using AI</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={handleGrammar}><SpellCheck /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Grammar suggestion using AI</p>
+                        </TooltipContent>
+                    </Tooltip>
 
                 </div>
             </div>
@@ -220,6 +226,17 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
                 onRetry={retryRewrite}
             />
 
-        </Slate>
+            <RewriteModal
+                title="Grammar Suggestions"
+                open={grammarOpen}
+                setOpen={setGrammarOpen}
+                options={grammarOptions}
+                notes={grammarNotes}
+                loading={grammarLoading}
+                onChoose={applyGrammar}
+                onRetry={retryGrammar}
+            />
+
+        </Slate >
     )
 }

@@ -14,7 +14,18 @@ export async function POST(req: Request) {
 
         const corrected = await fixGrammar(text)
 
-        return NextResponse.json({ corrected })
+        let options = []
+        let notes = ""
+
+        try {
+            const parsed = JSON.parse(corrected)
+            options = parsed.options ?? []
+            notes = parsed.notes ?? ""
+        } catch {
+            options = [{ title: "Grammar Corrected", text: corrected }]
+        }
+
+        return NextResponse.json({ options, notes })
     } catch (error) {
         console.error("AI grammar error:", error)
 

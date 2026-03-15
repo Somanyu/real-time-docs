@@ -24,23 +24,20 @@ import {
 import { useState } from "react"
 import { Typewriter } from "../ui/typewriter"
 import { Card, CardContent, CardHeader } from "../ui/card"
+import { RewriteModalProps } from "@/types/editor-type"
 
-type Option = {
-    title: string
-    text: string
-}
 
-interface Props {
-    open: boolean
-    setOpen: (v: boolean) => void
-    options: Option[]
-    notes: string
-    loading: boolean
-    onChoose: (text: string) => void
-    onRetry: () => void
-}
 
-export function RewriteModal({ open, setOpen, options, notes, loading, onChoose, onRetry }: Readonly<Props>) {
+export function RewriteModal({
+    title = "Rewrite Options",
+    open,
+    setOpen,
+    options,
+    notes,
+    loading,
+    onChoose,
+    onRetry,
+}: Readonly<RewriteModalProps>) {
 
     const [selected, setSelected] = useState<string | null>(null)
 
@@ -54,7 +51,7 @@ export function RewriteModal({ open, setOpen, options, notes, loading, onChoose,
             <DialogContent className="max-w-2xl">
 
                 <DialogHeader>
-                    <DialogTitle>Rewrite Options</DialogTitle>
+                    <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
 
                 <ScrollArea className="max-h-96 pr-4">
@@ -99,11 +96,12 @@ export function RewriteModal({ open, setOpen, options, notes, loading, onChoose,
                         </RadioGroup>
                     )}
 
-                    {!loading && notes && (
-                        <div className="mt-6 text-sm text-muted-foreground">{notes}</div>
-                    )}
 
                 </ScrollArea>
+
+                {!loading && notes && (
+                    <div className="py-5 text-sm text-muted-foreground">{notes}</div>
+                )}
 
                 <DialogFooter className="flex justify-between">
 
