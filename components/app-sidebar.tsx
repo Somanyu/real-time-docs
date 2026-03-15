@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, Bot, Clock4, Plus, Settings2, SquareTerminal, Star } from "lucide-react"
+import { BookOpen, Bot, Clock4, LayoutGrid, Plus, Settings2, SquareTerminal, Star } from "lucide-react"
 import { NavMain } from "@/components/nav-main"
 import { NavQuickActions } from "@/components/nav-quick-actions"
 import { NavUser } from "@/components/nav-user"
@@ -105,6 +105,11 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { workspace } = useWorkspace()
   const sidebarQuickActions = [
+    {
+      name: "Overview",
+      url: `/workspace/${workspace.slug}`,
+      icon: LayoutGrid,
+    },
     {
       name: "Favorites",
       url: `/workspace/${workspace.slug}?filter=favorites`,
