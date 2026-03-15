@@ -1,6 +1,7 @@
 "use client"
 
 import { FileText, Trash, Archive, MoreVertical } from "lucide-react"
+import Link from "next/link"
 import getRelativeTime from "@/lib/get-relative-time"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
@@ -30,25 +31,6 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
         setSummaryOpen(true)
     }
 
-    /**
-     * Opens the selected document in a new tab from the recent documents grid.
-     */
-    const handleOpenDocument = (documentId: string) => {
-        window.open(`/document/${documentId}`, "_blank", "noopener,noreferrer")
-    }
-
-    /**
-     * Opens the selected document when the user presses Enter or Space on the card.
-     */
-    const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, documentId: string) => {
-        if (event.key !== "Enter" && event.key !== " ") {
-            return
-        }
-
-        event.preventDefault()
-        handleOpenDocument(documentId)
-    }
-
     return (
         <div className="space-y-4">
             <div>
@@ -60,49 +42,61 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
 
             <div className="grid gap-6 md:grid-cols-4">
                 {documents.map((doc: DocumentWithAuthor) => (
-                    <div
-                        key={doc.id}
-                        role="link"
-                        tabIndex={0}
-                        onClick={() => handleOpenDocument(doc.id)}
-                        onKeyDown={(event) => handleCardKeyDown(event, doc.id)}
-                        className="group block cursor-pointer rounded-xl border transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-
-                        {doc.preview && (doc.preview as SlateElement[]).length > 0 ? (
-                            <div className="aspect-4/3 flex items-center justify-center p-2 overflow-hidden scale-[0.75]!" style={{ scale: "0.75" }}>
-                                <div className="h-full w-full origin-top-left">
-                                    <DocumentPreview content={doc.preview as SlateElement[]} />
+                    <div key={doc.id} className="group rounded-xl border transition hover:shadow-sm">
+                        <Link
+                            href={`/document/${doc.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            {doc.preview && (doc.preview as SlateElement[]).length > 0 ? (
+                                <div className="aspect-4/3 overflow-hidden p-2" style={{ scale: "0.75" }}>
+                                    <div className="flex h-full w-full origin-top-left items-center justify-center">
+                                        <DocumentPreview content={doc.preview as SlateElement[]} />
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="aspect-4/3 bg-orange-100 rounded-t-xl flex items-center justify-center p-2">
-                                <FileText className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                        )}
-
+                            ) : (
+                                <div className="aspect-4/3 rounded-t-xl bg-orange-100 p-2">
+                                    <div className="flex h-full items-center justify-center">
+                                        <FileText className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                </div>
+                            )}
+                        </Link>
                         <div className="p-4 space-y-4 border-t">
-                            <p className="font-medium line-clamp-1">{doc.title}</p>
-
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-x-2">
-                                    <Avatar className="w-8 h-8 border">
-                                        <AvatarFallback>{doc.createdBy.email.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
+                                <Link
+                                    href={`/document/${doc.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="min-w-0 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <p className="line-clamp-1 font-medium">{doc.title}</p>
 
-                                    <p className="text-xs text-muted-foreground">
-                                        Edited {getRelativeTime(doc.updatedAt)}
-                                    </p>
-                                </div>
+                                    <div className="mt-4 flex items-center gap-x-2">
+                                        <Avatar className="h-8 w-8 border">
+                                            <AvatarFallback>{doc.createdBy.email.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+
+                                        <p className="text-xs text-muted-foreground">
+                                            Edited {getRelativeTime(doc.updatedAt)}
+                                        </p>
+                                    </div>
+                                </Link>
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7"
+                                            aria-label={`Open actions for ${doc.title}`}
+                                        >
                                             <MoreVertical className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
 
-                                    <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+                                    <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => handleSummarize(doc.id)}>
                                             <SummariseActionLabel className="flex items-center gap-2" />
                                         </DropdownMenuItem>

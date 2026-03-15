@@ -1,7 +1,6 @@
 "use server"
 
 import prisma from "@/lib/prisma"
-import { revalidatePath } from "next/cache"
 
 export async function deleteDocument(documentId: string) {
     try {
@@ -10,8 +9,6 @@ export async function deleteDocument(documentId: string) {
                 id: documentId
             }
         })
-
-        // revalidatePath("/dashboard")
 
         return { success: true }
     } catch (error) {
