@@ -1,5 +1,6 @@
 import { Prisma } from "@/app/generated/prisma/client"
 import { ColumnDef } from "@tanstack/react-table"
+import { LucideIcon } from "lucide-react"
 
 export interface DocumentTitleProps {
     documentId: string,
@@ -59,4 +60,15 @@ export type AllDocumentsProps = {
     documents: DocumentWithAuthor[]
     title?: string
     archiveActionLabel?: "Archive" | "Restore"
+}
+
+export type MenuActionLabelProps = {
+    className?: string
+    icon: LucideIcon
+    iconClassName?: string
+    label: string
+}
+
+export type SummariseActionLabelProps = {
+    className?: string
 }

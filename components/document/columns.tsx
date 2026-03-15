@@ -1,13 +1,15 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, FileText, MoreHorizontal } from "lucide-react"
+import { Archive, ArrowUpDown, FileText, MoreHorizontal, Trash } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DocumentColumnsOptions, DocumentWithAuthor } from "@/types/document"
 import getRelativeTime from "@/lib/get-relative-time"
+import { MenuActionLabel } from "./menu-action-label"
+import { SummariseActionLabel } from "./summarise-action-label"
 
 export const columns = ({
     archiveActionLabel,
@@ -87,12 +89,24 @@ export const columns = ({
 
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onSummarize(doc.id)}>
-                                Summarise
+                                <SummariseActionLabel className="flex items-center gap-2" />
                             </DropdownMenuItem>
                             <DropdownMenuItem disabled={isArchiveUpdating} onClick={() => void onToggleArchive(doc)}>
-                                {archiveActionLabel}
+                                <MenuActionLabel
+                                    className="flex items-center gap-2"
+                                    icon={Archive}
+                                    iconClassName="h-4 w-4 text-muted-foreground"
+                                    label={archiveActionLabel}
+                                />
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-500" onClick={() => setDocumentToDelete(doc)}>Delete</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-500" onClick={() => setDocumentToDelete(doc)}>
+                                <MenuActionLabel
+                                    className="flex items-center gap-2"
+                                    icon={Trash}
+                                    iconClassName="h-4 w-4 text-red-500"
+                                    label="Delete"
+                                />
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
 
                     </DropdownMenu>

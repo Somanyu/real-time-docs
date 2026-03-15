@@ -5,14 +5,15 @@ import getRelativeTime from "@/lib/get-relative-time"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card"
-import { SparklesIcon, SparklesIconHandle } from "../ui/sparkles-icon"
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { AISummaryModal } from "./ai-summary-modal"
 import { DocumentPreview } from "../editor/document-preview"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
 import { SlateElement } from "@/types/editor-type"
 import { DocumentWithAuthor } from "@/types/document"
 import { useToggleDocumentArchive } from "@/hooks/use-toggle-document-archive"
+import { MenuActionLabel } from "../document/menu-action-label"
+import { SummariseActionLabel } from "../document/summarise-action-label"
 
 export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWithAuthor[] }>) {
 
@@ -20,8 +21,6 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
     const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
     const [documentToDelete, setDocumentToDelete] = useState<{ id: string, title: string } | null>(null)
     const { isUpdating, toggleArchive } = useToggleDocumentArchive()
-
-    const sparkleRef = useRef<SparklesIconHandle>(null)
 
     /**
      * Opens the AI summary modal for the selected recent document.
@@ -79,9 +78,8 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
 
                                     <HoverCardContent className="w-40 p-2" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex flex-col gap-1">
-                                            <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSummarize(doc.id) }} variant="ghost" className="justify-start gap-2" onMouseEnter={() => sparkleRef.current?.startAnimation()} onMouseLeave={() => sparkleRef.current?.stopAnimation()}>
-                                                <SparklesIcon ref={sparkleRef} className="h-4 w-4 drop-shadow-[0_0_4px_rgba(250,204,21,0.8)]" />
-                                                Summarise
+                                            <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSummarize(doc.id) }} variant="ghost" className="justify-start gap-2">
+                                                <SummariseActionLabel className="flex items-center gap-2" />
                                             </Button>
 
                                             <Button
@@ -97,8 +95,12 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
                                                     })
                                                 }}
                                             >
-                                                <Archive className="h-4 w-4" />
-                                                {isUpdating ? "Archiving..." : "Archive"}
+                                                <MenuActionLabel
+                                                    className="flex items-center gap-2"
+                                                    icon={Archive}
+                                                    iconClassName="h-4 w-4 text-muted-foreground"
+                                                    label={isUpdating ? "Archiving..." : "Archive"}
+                                                />
                                             </Button>
 
                                             <Button
@@ -111,8 +113,12 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
                                                     })
                                                 }}
                                                 variant="ghost" className="justify-start gap-2 text-red-500">
-                                                <Trash className="h-4 w-4" />
-                                                Delete
+                                                <MenuActionLabel
+                                                    className="flex items-center gap-2"
+                                                    icon={Trash}
+                                                    iconClassName="h-4 w-4 text-red-500"
+                                                    label="Delete"
+                                                />
                                             </Button>
                                         </div>
                                     </HoverCardContent>
