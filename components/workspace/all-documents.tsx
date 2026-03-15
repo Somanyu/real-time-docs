@@ -6,14 +6,21 @@ import { columns } from "../document/columns"
 import { Input } from "../ui/input"
 import { useState } from "react"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
+import { useToggleDocumentArchive } from "@/hooks/use-toggle-document-archive"
 
 export function AllDocuments({
     documents,
     title = "All Documents",
-}: Readonly<{ documents: DocumentWithAuthor[], title?: string }>) {
+    archiveActionLabel = "Archive",
+}: Readonly<{
+    documents: DocumentWithAuthor[]
+    title?: string
+    archiveActionLabel?: "Archive" | "Restore"
+}>) {
 
     const [search, setSearch] = useState<string>("")
     const [documentToDelete, setDocumentToDelete] = useState<DocumentWithAuthor | null>(null)
+    const { isUpdating, toggleArchive } = useToggleDocumentArchive()
 
     const filteredDocs = documents.filter((doc) =>
         doc.title.toLowerCase().includes(search.toLowerCase())
@@ -31,7 +38,20 @@ export function AllDocuments({
 
                 {/* Table */}
                 <div className="">
-                    <DataTable columns={columns(setDocumentToDelete)} data={filteredDocs} />
+                    <DataTable
+                        columns={columns({
+                            archiveActionLabel,
+                            isArchiveUpdating: isUpdating,
+                            onToggleArchive: async (doc) => {
+                                await toggleArchive({
+                                    documentId: doc.id,
+                                    archived: !doc.isArchived,
+                                })
+                            },
+                            setDocumentToDelete,
+                        })}
+                        data={filteredDocs}
+                    />
                 </div>
 
             </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BookOpen, Bot, Clock4, LayoutGrid, Plus, Settings2, SquareTerminal, Star } from "lucide-react"
+import { Archive, BookOpen, Bot, Clock4, LayoutGrid, Plus, Settings2, SquareTerminal, Star } from "lucide-react"
 import { NavMain } from "@/components/nav-main"
 import { NavQuickActions } from "@/components/nav-quick-actions"
 import { NavUser } from "@/components/nav-user"
@@ -119,6 +119,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       name: "Recent",
       url: `/workspace/${workspace.slug}?filter=recent`,
       icon: Clock4,
+    },
+    {
+      name: "Archived",
+      url: `/workspace/${workspace.slug}?filter=archived`,
+      icon: Archive,
     },
   ]
 

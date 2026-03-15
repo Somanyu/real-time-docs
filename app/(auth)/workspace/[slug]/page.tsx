@@ -1,8 +1,5 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { redirect } from "next/navigation"
-import { WorkspacePageProps } from "@/types/workspace"
+import { WorkspaceFilter, WorkspacePageProps } from "@/types/workspace"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -11,25 +8,23 @@ import { AllDocuments } from "@/components/workspace/all-documents"
 import EmptyDocumentState from "@/components/document/empty-document-state"
 import { DocumentWithAuthor } from "@/types/document"
 import { getWorkspaceOrThrow } from "@/lib/server/get-workspace"
+import { WORKSPACE_FILTERS } from "@/constants/workspace"
 
 export default async function WorkspacePage({ params, searchParams }: WorkspacePageProps) {
     const { slug } = await params
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.email || !session.user.id) {
-        redirect("/login")
-    }
-
     const resolvedSearchParams = searchParams ? await searchParams : undefined
     const rawFilter = resolvedSearchParams?.filter
-    const filter = rawFilter === "favorites" || rawFilter === "recent" ? rawFilter : "all"
+    const filter: WorkspaceFilter = WORKSPACE_FILTERS.includes(rawFilter as (typeof WORKSPACE_FILTERS)[number])
+        ? rawFilter as WorkspaceFilter
+        : "all"
 
-    const { workspace } = await getWorkspaceOrThrow(slug)
+    const { workspace, session } = await getWorkspaceOrThrow(slug)
+    const showArchivedDocuments = filter === "archived"
 
     const documents: DocumentWithAuthor[] = await prisma.document.findMany({
         where: {
             workspaceId: workspace.id,
-            isArchived: false,
+            isArchived: showArchivedDocuments,
             ...(filter === "favorites" ? {
                 documentStars: {
                     some: {
@@ -61,6 +56,8 @@ export default async function WorkspacePage({ params, searchParams }: WorkspaceP
         documentListTitle = "Favorite Documents"
     } else if (filter === "recent") {
         documentListTitle = "Recent Documents"
+    } else if (filter === "archived") {
+        documentListTitle = "Archived Documents"
     }
 
     let pageContent: React.ReactNode
@@ -68,7 +65,11 @@ export default async function WorkspacePage({ params, searchParams }: WorkspaceP
     if (isFilteredView) {
         pageContent = (
             <div className="p-6">
-                <AllDocuments documents={documents} title={documentListTitle} />
+                <AllDocuments
+                    documents={documents}
+                    title={documentListTitle}
+                    archiveActionLabel={showArchivedDocuments ? "Restore" : "Archive"}
+                />
             </div>
         )
     } else if (documents.length > 0) {

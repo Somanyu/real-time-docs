@@ -37,3 +37,19 @@ export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
 }
+
+export type ArchiveRequestBody = {
+    archived?: boolean
+}
+
+export type ToggleArchiveOptions = {
+    documentId: string
+    archived: boolean
+}
+
+export type DocumentColumnsOptions = {
+    archiveActionLabel: "Archive" | "Restore"
+    isArchiveUpdating: boolean
+    onToggleArchive: (doc: DocumentWithAuthor) => Promise<void>
+    setDocumentToDelete: (doc: DocumentWithAuthor) => void
+}

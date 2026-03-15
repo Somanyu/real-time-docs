@@ -12,12 +12,14 @@ import { DocumentPreview } from "../editor/document-preview"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
 import { SlateElement } from "@/types/editor-type"
 import { DocumentWithAuthor } from "@/types/document"
+import { useToggleDocumentArchive } from "@/hooks/use-toggle-document-archive"
 
 export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWithAuthor[] }>) {
 
     const [summaryOpen, setSummaryOpen] = useState<boolean>(false)
     const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
     const [documentToDelete, setDocumentToDelete] = useState<{ id: string, title: string } | null>(null)
+    const { isUpdating, toggleArchive } = useToggleDocumentArchive()
 
     const sparkleRef = useRef<SparklesIconHandle>(null)
 
@@ -79,9 +81,21 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
                                                 Summarise
                                             </Button>
 
-                                            <Button variant="ghost" className="justify-start gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                className="justify-start gap-2"
+                                                disabled={isUpdating}
+                                                onClick={async (e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    await toggleArchive({
+                                                        documentId: doc.id,
+                                                        archived: true,
+                                                    })
+                                                }}
+                                            >
                                                 <Archive className="h-4 w-4" />
-                                                Archive
+                                                {isUpdating ? "Archiving..." : "Archive"}
                                             </Button>
 
                                             <Button

@@ -1,94 +1,99 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, FileText } from "lucide-react"
+import { ArrowUpDown, FileText, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-
-import { DocumentWithAuthor } from "@/types/document"
+import { DocumentColumnsOptions, DocumentWithAuthor } from "@/types/document"
 import getRelativeTime from "@/lib/get-relative-time"
 
-export const columns = (setDocumentToDelete: (doc: DocumentWithAuthor) => void): ColumnDef<DocumentWithAuthor>[] => [
+export const columns = ({
+    archiveActionLabel,
+    isArchiveUpdating,
+    onToggleArchive,
+    setDocumentToDelete,
+}: DocumentColumnsOptions): ColumnDef<DocumentWithAuthor>[] => [
 
-    {
-        accessorKey: "title",
-        header: "Name",
+        {
+            accessorKey: "title",
+            header: "Name",
 
-        cell: ({ row }) => {
-            const doc = row.original
+            cell: ({ row }) => {
+                const doc = row.original
 
-            return (
-                <Link href={`/document/${doc.id}`} className="flex items-center gap-3 font-medium hover:underline">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    {doc.title}
-                </Link>
-            )
+                return (
+                    <Link href={`/document/${doc.id}`} className="flex items-center gap-3 font-medium hover:underline">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        {doc.title}
+                    </Link>
+                )
+            },
         },
-    },
 
-    {
-        accessorKey: "updatedAt",
+        {
+            accessorKey: "updatedAt",
 
-        header: ({ column }) => (
-            <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                Last Modified
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
+            header: ({ column }) => (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Last Modified
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            ),
 
-        cell: ({ row }) => {
-            const doc = row.original
+            cell: ({ row }) => {
+                const doc = row.original
 
-            return (
-                <span className="text-muted-foreground">{getRelativeTime(doc.updatedAt)}</span>
-            )
+                return (
+                    <span className="text-muted-foreground">{getRelativeTime(doc.updatedAt)}</span>
+                )
+            },
         },
-    },
 
-    {
-        accessorKey: "author",
-        header: "Author",
+        {
+            accessorKey: "author",
+            header: "Author",
 
-        cell: ({ row }) => {
-            const doc = row.original
+            cell: ({ row }) => {
+                const doc = row.original
 
-            return (
-                <div className="flex items-center gap-2">
-                    <Avatar className="h-7 w-7">
-                        <AvatarFallback className="text-xs">{doc.createdBy.email.slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-muted-foreground">{doc.createdBy.email}</span>
-                </div>
-            )
+                return (
+                    <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7">
+                            <AvatarFallback className="text-xs">{doc.createdBy.email.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-muted-foreground">{doc.createdBy.email}</span>
+                    </div>
+                )
+            },
         },
-    },
 
-    {
-        id: "actions",
+        {
+            id: "actions",
 
-        cell: ({ row }) => {
-            const doc = row.original
+            cell: ({ row }) => {
+                const doc = row.original
 
-            return (
-                <DropdownMenu>
+                return (
+                    <DropdownMenu>
 
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
 
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Archive</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-500" onClick={() => setDocumentToDelete(doc)}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem disabled={isArchiveUpdating} onClick={() => void onToggleArchive(doc)}>
+                                {archiveActionLabel}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-500" onClick={() => setDocumentToDelete(doc)}>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
 
-                </DropdownMenu>
-            )
+                    </DropdownMenu>
+                )
+            },
         },
-    },
 
-]
+    ]

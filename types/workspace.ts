@@ -1,3 +1,5 @@
+import { WORKSPACE_FILTERS } from "@/constants/workspace"
+
 export interface WorkspacePageProps {
     params: Promise<{
         slug: string
@@ -29,3 +31,5 @@ export type AISummaryModalProps = {
     onOpenChange: (open: boolean) => void
     documentId: string | null
 }
+
+export type WorkspaceFilter = (typeof WORKSPACE_FILTERS)[number] | "all"
