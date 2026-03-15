@@ -3,9 +3,12 @@
 import { useState } from "react"
 import { deleteDocument } from "@/server/document/delete-document"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 export function useDeleteDocument() {
-    const [isDeleting, setIsDeleting] = useState(false)
+    const [isDeleting, setIsDeleting] = useState<boolean>(false)
+
+    const router = useRouter()
 
     const handleDelete = async (documentId: string) => {
         try {
@@ -15,6 +18,7 @@ export function useDeleteDocument() {
 
             if (res.success) {
                 toast.success("Document deleted")
+                router.refresh()
             }
 
         } catch {

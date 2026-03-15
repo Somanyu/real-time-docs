@@ -1,7 +1,6 @@
 "use client"
 
 import { FileText, Trash, Archive, MoreVertical } from "lucide-react"
-import { Document } from "@/app/generated/prisma/client"
 import getRelativeTime from "@/lib/get-relative-time"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
@@ -12,8 +11,9 @@ import { AISummaryModal } from "./ai-summary-modal"
 import { DocumentPreview } from "../editor/document-preview"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
 import { SlateElement } from "@/types/editor-type"
+import { DocumentWithAuthor } from "@/types/document"
 
-export function RecentDocuments({ documents }: Readonly<{ documents: Document[] }>) {
+export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWithAuthor[] }>) {
 
     const [summaryOpen, setSummaryOpen] = useState<boolean>(false)
     const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
@@ -36,7 +36,7 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
             </div>
 
             <div className="grid gap-6 md:grid-cols-4">
-                {documents.map((doc: Document) => (
+                {documents.map((doc: DocumentWithAuthor) => (
                     <a key={doc.id} href={`/document/${doc.id}`} target="_blank" rel="noopener noreferrer" className="group rounded-xl border hover:shadow-sm transition block">
 
                         {doc.preview && (doc.preview as SlateElement[]).length > 0 ? (
@@ -57,7 +57,7 @@ export function RecentDocuments({ documents }: Readonly<{ documents: Document[] 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-x-2">
                                     <Avatar className="w-8 h-8 border">
-                                        <AvatarFallback>{doc.createdById.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                        <AvatarFallback>{doc.createdBy.email.slice(0, 2).toUpperCase()}</AvatarFallback>
                                     </Avatar>
 
                                     <p className="text-xs text-muted-foreground">

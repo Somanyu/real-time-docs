@@ -69,7 +69,6 @@ export const authOptions: NextAuthOptions = {
 
     events: {
         async createUser({ user }) {
-            console.log("🔥 createUser event triggered for:", user.email)
 
             const baseName = user.name ||
                 user.email?.split("@")[0] ||

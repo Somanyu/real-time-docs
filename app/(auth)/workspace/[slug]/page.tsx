@@ -9,6 +9,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { RecentDocuments } from "@/components/workspace/recent-documents"
 import { AllDocuments } from "@/components/workspace/all-documents"
 import EmptyDocumentState from "@/components/document/empty-document-state"
+import { DocumentWithAuthor } from "@/types/document"
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
@@ -25,8 +26,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
         where: { slug },
     })
 
-    // Fetch documents
-    const documents = await prisma.document.findMany({
+    const documents: DocumentWithAuthor[] = await prisma.document.findMany({
         where: {
             workspaceId: workspace?.id,
             isArchived: false,
@@ -34,6 +34,13 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
         orderBy: {
             updatedAt: "desc",
         },
+        include: {
+            createdBy: {
+                select: {
+                    email: true,
+                }
+            }
+        }
     })
 
     const recentDocuments = documents.slice(0, 4)
@@ -58,7 +65,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                         <RecentDocuments documents={recentDocuments} />
 
                         {/* All Documents */}
-                        <AllDocuments documents={documents} workspaceSlug={workspace!.slug} />
+                        <AllDocuments documents={documents} />
 
                     </div>
 
