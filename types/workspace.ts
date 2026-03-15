@@ -2,6 +2,9 @@ export interface WorkspacePageProps {
     params: Promise<{
         slug: string
     }>
+    searchParams?: Promise<{
+        filter?: string
+    }>
 }
 
 export interface WorkspaceLayoutProps {

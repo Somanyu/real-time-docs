@@ -63,7 +63,10 @@ import { Input } from "../ui/input"
 import { useState } from "react"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
 
-export function AllDocuments({ documents }: Readonly<{ documents: DocumentWithAuthor[] }>) {
+export function AllDocuments({
+    documents,
+    title = "All Documents",
+}: Readonly<{ documents: DocumentWithAuthor[], title?: string }>) {
 
     const [search, setSearch] = useState<string>("")
     const [documentToDelete, setDocumentToDelete] = useState<DocumentWithAuthor | null>(null)
@@ -78,7 +81,7 @@ export function AllDocuments({ documents }: Readonly<{ documents: DocumentWithAu
 
                 {/* Header row */}
                 <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-semibold tracking-tight">All Documents</h2>
+                    <h2 className="text-xl font-semibold">{title}</h2>
                     <Input placeholder="Search documents..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-65 h-9" />
                 </div>
 

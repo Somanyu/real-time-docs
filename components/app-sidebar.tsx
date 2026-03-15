@@ -102,21 +102,20 @@ const data = {
   ],
 }
 
-const sidebarQuickActions = [
-  {
-    name: "Favorites",
-    url: "#",
-    icon: Star,
-  },
-  {
-    name: "Recent",
-    url: "#",
-    icon: Clock4,
-  },
-]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { workspace } = useWorkspace()
+  const sidebarQuickActions = [
+    {
+      name: "Favorites",
+      url: `/workspace/${workspace.slug}?filter=favorites`,
+      icon: Star,
+    },
+    {
+      name: "Recent",
+      url: `/workspace/${workspace.slug}?filter=recent`,
+      icon: Clock4,
+    },
+  ]
 
   async function handleCreateDocument() {
     if (!workspace?.id) {
