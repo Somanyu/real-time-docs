@@ -23,6 +23,9 @@ export function RecentDocuments({ documents }: Readonly<{ documents: DocumentWit
 
     const sparkleRef = useRef<SparklesIconHandle>(null)
 
+    /**
+     * Opens the AI summary modal for the selected recent document.
+     */
     const handleSummarize = (docId: string) => {
         setSelectedDocId(docId)
         setSummaryOpen(true)

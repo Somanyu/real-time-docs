@@ -13,6 +13,7 @@ export const columns = ({
     archiveActionLabel,
     isArchiveUpdating,
     onToggleArchive,
+    onSummarize,
     setDocumentToDelete,
 }: DocumentColumnsOptions): ColumnDef<DocumentWithAuthor>[] => [
 
@@ -85,6 +86,9 @@ export const columns = ({
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onSummarize(doc.id)}>
+                                Summarise
+                            </DropdownMenuItem>
                             <DropdownMenuItem disabled={isArchiveUpdating} onClick={() => void onToggleArchive(doc)}>
                                 {archiveActionLabel}
                             </DropdownMenuItem>

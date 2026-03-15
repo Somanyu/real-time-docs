@@ -1,30 +1,37 @@
 "use client"
 
-import { DocumentWithAuthor } from "@/types/document"
+import { AISummaryModal } from "./ai-summary-modal"
 import { DataTable } from "../document/data-table"
 import { columns } from "../document/columns"
 import { Input } from "../ui/input"
 import { useState } from "react"
 import { DeleteDocumentDialog } from "../document/delete-document-dialog"
 import { useToggleDocumentArchive } from "@/hooks/use-toggle-document-archive"
+import { AllDocumentsProps, DocumentWithAuthor } from "@/types/document"
 
 export function AllDocuments({
     documents,
     title = "All Documents",
     archiveActionLabel = "Archive",
-}: Readonly<{
-    documents: DocumentWithAuthor[]
-    title?: string
-    archiveActionLabel?: "Archive" | "Restore"
-}>) {
+}: Readonly<AllDocumentsProps>) {
 
     const [search, setSearch] = useState<string>("")
     const [documentToDelete, setDocumentToDelete] = useState<DocumentWithAuthor | null>(null)
+    const [summaryOpen, setSummaryOpen] = useState<boolean>(false)
+    const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
     const { isUpdating, toggleArchive } = useToggleDocumentArchive()
 
     const filteredDocs = documents.filter((doc) =>
         doc.title.toLowerCase().includes(search.toLowerCase())
     )
+
+    /**
+     * Opens the shared AI summary modal for the selected document.
+     */
+    const handleSummarize = (documentId: string) => {
+        setSelectedDocId(documentId)
+        setSummaryOpen(true)
+    }
 
     return (
         <>
@@ -48,6 +55,7 @@ export function AllDocuments({
                                     archived: !doc.isArchived,
                                 })
                             },
+                            onSummarize: handleSummarize,
                             setDocumentToDelete,
                         })}
                         data={filteredDocs}
@@ -59,6 +67,7 @@ export function AllDocuments({
             {documentToDelete && (
                 <DeleteDocumentDialog document={documentToDelete} onClose={() => setDocumentToDelete(null)} />
             )}
+            <AISummaryModal open={summaryOpen} onOpenChange={setSummaryOpen} documentId={selectedDocId} />
         </>
     )
 }

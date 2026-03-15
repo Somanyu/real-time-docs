@@ -51,5 +51,12 @@ export type DocumentColumnsOptions = {
     archiveActionLabel: "Archive" | "Restore"
     isArchiveUpdating: boolean
     onToggleArchive: (doc: DocumentWithAuthor) => Promise<void>
+    onSummarize: (documentId: string) => void
     setDocumentToDelete: (doc: DocumentWithAuthor) => void
+}
+
+export type AllDocumentsProps = {
+    documents: DocumentWithAuthor[]
+    title?: string
+    archiveActionLabel?: "Archive" | "Restore"
 }
