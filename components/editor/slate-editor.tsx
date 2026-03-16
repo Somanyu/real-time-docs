@@ -263,9 +263,11 @@ export function SlateEditor({ initialValue, documentId, socket, currentUser }: R
             skipAutosaveRef.current = true
 
             try {
-                const nextContent = content.length > 0
+                const fallbackContent: Descendant[] = [{ type: "paragraph", children: [{ text: "" }] }]
+
+                const nextContent: Descendant[] = content.length > 0
                     ? content
-                    : [{ type: "paragraph", children: [{ text: "" }] }]
+                    : fallbackContent
 
                 Editor.withoutNormalizing(editor, () => {
                     const size = editor.children.length
