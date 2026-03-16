@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { createEditor, Descendant, Editor, Node } from "slate"
-import { Slate, Editable, withReact, RenderElementProps, RenderLeafProps } from "slate-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { createEditor, Descendant, Editor, Node, NodeEntry, Operation, Range, Transforms } from "slate"
+import { Editable, ReactEditor, RenderElementProps, RenderLeafProps, Slate, withReact } from "slate-react"
 import { withHistory } from "slate-history"
 import { Separator } from "@/components/ui/separator"
 import { Bold, Italic, Underline, Code, AlignCenter, AlignJustify, AlignLeft, AlignRight, List, ListOrdered, SpellCheck, PencilLine } from "lucide-react"
@@ -27,12 +27,24 @@ import { RewriteModal } from "./rewrite-modal"
 import { useAIRewrite } from "@/hooks/use-ai-rewrite"
 import { useAIGrammar } from "@/hooks/use-ai-grammar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
+import { RemoteCursor } from "@/lib/websocket-client"
+
+type CursorOverlay = {
+    socketId: string
+    name: string
+    color: string
+    left: number
+    top: number
+    height: number
+}
+
+const CURSOR_IDLE_MS = Number(process.env.NEXT_PUBLIC_CURSOR_IDLE_MS ?? 3000)
 
 /* ======================== */
 /* MAIN EDITOR */
 /* ======================== */
 
-export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorProps>) {
+export function SlateEditor({ initialValue, documentId, socket, currentUser }: Readonly<SlateEditorProps>) {
     const editor = useMemo(
         () => withHistory(withReact(createEditor())),
         []
@@ -41,6 +53,15 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
     const [value, setValue] = useState<Descendant[]>(initialValue)
     const [zoom, setZoom] = useState<number>(100)
     const [stats, setStats] = useState({ words: 0, characters: 0 })
+    const [remoteCursors, setRemoteCursors] = useState<Record<string, RemoteCursor>>({})
+    const [cursorOverlays, setCursorOverlays] = useState<CursorOverlay[]>([])
+    const isApplyingRemoteRef = useRef(false)
+    const latestValueRef = useRef<Descendant[]>(initialValue)
+    const skipAutosaveRef = useRef(false)
+    const remoteCursorsRef = useRef<Record<string, RemoteCursor>>({})
+    const selectionBroadcastTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const lastBroadcastSelectionRef = useRef<Range | null>(null)
+    const editableContainerRef = useRef<HTMLDivElement | null>(null)
 
     const { rewriteOpen, setRewriteOpen, options, notes, loading, openRewrite, retryRewrite, applyRewrite } = useAIRewrite(editor)
     const {
@@ -76,7 +97,7 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
         return () => clearTimeout(id)
     }, [value])
 
-    useDocumentAutosave(documentId, value)
+    useDocumentAutosave(documentId, value, skipAutosaveRef)
 
     const documentStatus = useDocumentSaveStore((s) => s.status)
 
@@ -91,6 +112,25 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
         (props: RenderLeafProps) => <Leaf {...props} />,
         []
     )
+
+    const decorate = useCallback(([, path]: NodeEntry<Node>) => {
+        const ranges: (Range & { remoteSelectionColor?: string })[] = []
+
+        Object.values(remoteCursorsRef.current).forEach((cursor) => {
+            if (!cursor.selection || Range.isCollapsed(cursor.selection)) return
+
+            const intersection = Range.intersection(cursor.selection, Editor.range(editor, path))
+
+            if (!intersection) return
+
+            ranges.push({
+                ...intersection,
+                remoteSelectionColor: `${cursor.color}33`,
+            })
+        })
+
+        return ranges
+    }, [editor])
 
     const handleRewrite = () => {
         if (!editor.selection) return
@@ -108,8 +148,307 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
         openGrammar(text, editor.selection)
     }
 
+    const syncRemoteCursors = useCallback((nextCursors: Record<string, RemoteCursor>) => {
+        remoteCursorsRef.current = nextCursors
+        setRemoteCursors(nextCursors)
+    }, [])
+
+    const pruneInactiveCursors = useCallback(() => {
+        const now = Date.now()
+        const nextCursors = Object.fromEntries(
+            Object.entries(remoteCursorsRef.current).filter(([, cursor]) => {
+                return now - (cursor.lastActiveAt ?? now) < CURSOR_IDLE_MS
+            })
+        )
+
+        if (Object.keys(nextCursors).length !== Object.keys(remoteCursorsRef.current).length) {
+            syncRemoteCursors(nextCursors)
+        }
+    }, [syncRemoteCursors])
+
+    const updateCursorOverlays = useCallback(() => {
+        const container = editableContainerRef.current
+        if (!container) return
+
+        const containerRect = container.getBoundingClientRect()
+        const overlays = Object.values(remoteCursorsRef.current)
+            .filter((cursor) => Date.now() - (cursor.lastActiveAt ?? Date.now()) < CURSOR_IDLE_MS)
+            .filter((cursor) => cursor.selection && Range.isCollapsed(cursor.selection))
+            .flatMap((cursor) => {
+                try {
+                    const domRange = ReactEditor.toDOMRange(editor, cursor.selection!)
+                    const rect = domRange.getBoundingClientRect()
+                    const fallbackRect = domRange.getClientRects()[0]
+                    const targetRect = rect.height > 0 ? rect : fallbackRect
+
+                    if (!targetRect) return []
+
+                    return [{
+                        socketId: cursor.socketId,
+                        name: cursor.name,
+                        color: cursor.color,
+                        left: targetRect.left - containerRect.left,
+                        top: targetRect.top - containerRect.top,
+                        height: Math.max(targetRect.height, 18),
+                    }]
+                } catch {
+                    return []
+                }
+            })
+
+        setCursorOverlays(overlays)
+    }, [editor])
+
+    const broadcastSelection = useCallback((selection: Range | null) => {
+        if (!socket || !currentUser) return
+
+        const hasChanged = selection === null
+            ? lastBroadcastSelectionRef.current !== null
+            : !lastBroadcastSelectionRef.current || !Range.equals(lastBroadcastSelectionRef.current, selection)
+
+        if (!hasChanged) return
+
+        lastBroadcastSelectionRef.current = selection
+        socket.emit("cursor-update", {
+            documentId,
+            selection,
+        })
+    }, [currentUser, documentId, socket])
+
+    useEffect(() => {
+        latestValueRef.current = value
+    }, [value])
+
+    useEffect(() => {
+        updateCursorOverlays()
+    }, [remoteCursors, value, updateCursorOverlays])
+
+    useEffect(() => {
+        const handleViewportChange = () => updateCursorOverlays()
+
+        globalThis.addEventListener("resize", handleViewportChange)
+        globalThis.addEventListener("scroll", handleViewportChange, true)
+
+        return () => {
+            globalThis.removeEventListener("resize", handleViewportChange)
+            globalThis.removeEventListener("scroll", handleViewportChange, true)
+        }
+    }, [updateCursorOverlays])
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            pruneInactiveCursors()
+        }, 500)
+
+        return () => clearInterval(interval)
+    }, [pruneInactiveCursors])
+
+    useEffect(() => {
+        if (!socket || !currentUser) return
+
+        const applyOperation = (operation: Operation) => {
+            isApplyingRemoteRef.current = true
+            skipAutosaveRef.current = true
+
+            try {
+                editor.apply(operation)
+                setValue(editor.children as Descendant[])
+            } finally {
+                isApplyingRemoteRef.current = false
+            }
+        }
+
+        const replaceContent = (content: Descendant[]) => {
+            isApplyingRemoteRef.current = true
+            skipAutosaveRef.current = true
+
+            try {
+                const nextContent = content.length > 0
+                    ? content
+                    : [{ type: "paragraph", children: [{ text: "" }] }]
+
+                Editor.withoutNormalizing(editor, () => {
+                    const size = editor.children.length
+
+                    if (size > 0) {
+                        Transforms.delete(editor, {
+                            at: {
+                                anchor: Editor.start(editor, []),
+                                focus: Editor.end(editor, []),
+                            },
+                        })
+                    }
+
+                    Transforms.insertNodes(editor, nextContent, { at: [0] })
+                })
+
+                setValue(editor.children as Descendant[])
+            } finally {
+                isApplyingRemoteRef.current = false
+            }
+        }
+
+        const transformRemoteSelections = (operation: Operation) => {
+            if (operation.type === "set_selection") return
+
+            const nextCursors = Object.fromEntries(
+                Object.entries(remoteCursorsRef.current).flatMap(([socketId, cursor]) => {
+                    if (!cursor.selection) return [[socketId, cursor]]
+
+                    const nextSelection = Range.transform(cursor.selection, operation)
+
+                    if (!nextSelection) return []
+
+                    return [[socketId, { ...cursor, selection: nextSelection }]]
+                })
+            )
+
+            syncRemoteCursors(nextCursors)
+        }
+
+        const previousApply = editor.apply
+        editor.apply = (operation: Operation) => {
+            previousApply(operation)
+            transformRemoteSelections(operation)
+
+            if (isApplyingRemoteRef.current || operation.type === "set_selection") {
+                return
+            }
+
+            socket.emit("document-operation", {
+                documentId,
+                operation,
+            })
+        }
+
+        const handleRemoteOperation = ({
+            documentId: remoteDocumentId,
+            operation,
+        }: {
+            documentId: string
+            operation: Operation
+        }) => {
+            if (remoteDocumentId !== documentId) return
+            applyOperation(operation)
+        }
+
+        const handleDocumentSync = ({
+            documentId: remoteDocumentId,
+            content,
+        }: {
+            documentId: string
+            content: Descendant[]
+        }) => {
+            if (remoteDocumentId !== documentId) return
+            replaceContent(content)
+        }
+
+        const handleStateRequest = ({
+            documentId: remoteDocumentId,
+            targetSocketId,
+        }: {
+            documentId: string
+            targetSocketId: string
+        }) => {
+            if (remoteDocumentId !== documentId) return
+
+            socket.emit("document-state", {
+                documentId,
+                targetSocketId,
+                content: latestValueRef.current,
+            })
+        }
+
+        const handleRemoteCursor = ({
+            documentId: remoteDocumentId,
+            cursor,
+        }: {
+            documentId: string
+            cursor: RemoteCursor
+        }) => {
+            if (remoteDocumentId !== documentId) return
+
+            syncRemoteCursors({
+                ...remoteCursorsRef.current,
+                [cursor.socketId]: {
+                    ...cursor,
+                    lastActiveAt: Date.now(),
+                },
+            })
+        }
+
+        const handleCursorRemove = ({
+            documentId: remoteDocumentId,
+            socketId,
+        }: {
+            documentId: string
+            socketId: string
+        }) => {
+            if (remoteDocumentId !== documentId) return
+
+            const nextCursors = { ...remoteCursorsRef.current }
+            delete nextCursors[socketId]
+            syncRemoteCursors(nextCursors)
+        }
+
+        const handleRoomUsers = (users: { socketId: string }[]) => {
+            const activeSocketIds = new Set(users.map((user) => user.socketId))
+            const nextCursors = Object.fromEntries(
+                Object.entries(remoteCursorsRef.current).filter(([socketId]) => activeSocketIds.has(socketId))
+            )
+
+            syncRemoteCursors(nextCursors)
+        }
+
+        if (!socket.connected) {
+            socket.connect()
+        }
+
+        socket.emit("join-document", {
+            documentId,
+            user: currentUser,
+        })
+
+        socket.on("remote-operation", handleRemoteOperation)
+        socket.on("sync-document", handleDocumentSync)
+        socket.on("request-document-state", handleStateRequest)
+        socket.on("remote-cursor", handleRemoteCursor)
+        socket.on("cursor-remove", handleCursorRemove)
+        socket.on("room-users", handleRoomUsers)
+
+        return () => {
+            editor.apply = previousApply
+            if (selectionBroadcastTimeoutRef.current) {
+                clearTimeout(selectionBroadcastTimeoutRef.current)
+            }
+            broadcastSelection(null)
+            socket.off("remote-operation", handleRemoteOperation)
+            socket.off("sync-document", handleDocumentSync)
+            socket.off("request-document-state", handleStateRequest)
+            socket.off("remote-cursor", handleRemoteCursor)
+            socket.off("cursor-remove", handleCursorRemove)
+            socket.off("room-users", handleRoomUsers)
+        }
+    }, [broadcastSelection, currentUser, documentId, editor, socket, syncRemoteCursors])
+
     return (
-        <Slate editor={editor} initialValue={value} onChange={(newValue) => { setValue(newValue) }}>
+        <Slate
+            editor={editor}
+            initialValue={value}
+            onChange={(newValue) => {
+                setValue(newValue)
+
+                if (isApplyingRemoteRef.current || !socket || !currentUser) return
+
+                if (selectionBroadcastTimeoutRef.current) {
+                    clearTimeout(selectionBroadcastTimeoutRef.current)
+                }
+
+                selectionBroadcastTimeoutRef.current = setTimeout(() => {
+                    broadcastSelection(editor.selection)
+                }, 50)
+            }}
+        >
 
             {/* TOOLBAR */}
             <div className="flex justify-center pt-6 pb-4">
@@ -190,12 +529,46 @@ export function SlateEditor({ initialValue, documentId }: Readonly<SlateEditorPr
             <div className="flex justify-center pb-24">
                 <div style={{ height: `${(BASE_HEIGHT * zoom) / 100}px`, }} className="relative w-full">
                     <div style={{ width: BASE_WIDTH, minHeight: BASE_HEIGHT, transform: `scale(${zoom / 100})`, transformOrigin: "top center", }} className="absolute left-1/2 -translate-x-1/2 bg-white shadow border px-20 py-24">
-                        <Editable
-                            renderElement={renderElement}
-                            renderLeaf={renderLeaf}
-                            placeholder="Start writing..."
-                            className="outline-none text-[16px] leading-7 w-full"
-                        />
+                        <div ref={editableContainerRef} className="relative">
+                            <Editable
+                                decorate={decorate}
+                                renderElement={renderElement}
+                                renderLeaf={renderLeaf}
+                                placeholder="Start writing..."
+                                className="outline-none text-[16px] leading-7 w-full"
+                            />
+
+                            <div className="pointer-events-none absolute inset-0">
+                                {cursorOverlays.map((cursor) => (
+                                    <div
+                                        key={cursor.socketId}
+                                        className="absolute"
+                                        style={{
+                                            left: cursor.left,
+                                            top: cursor.top,
+                                            height: cursor.height,
+                                        }}
+                                    >
+                                        <div
+                                            className="realtime-cursor-blink absolute left-0 top-0 w-0.5 rounded-full"
+                                            style={{
+                                                height: cursor.height,
+                                                backgroundColor: cursor.color,
+                                            }}
+                                        />
+                                        <div
+                                            className="absolute left-0 top-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm"
+                                            style={{
+                                                transform: "translateY(-115%)",
+                                                backgroundColor: cursor.color,
+                                            }}
+                                        >
+                                            {cursor.name}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

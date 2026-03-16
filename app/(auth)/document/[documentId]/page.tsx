@@ -2,12 +2,8 @@ import prisma from "@/lib/prisma"
 import { authOptions } from "@/lib/auth"
 import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { SlateEditor } from "@/components/editor/slate-editor"
+import { DocumentCollaborationShell } from "@/components/document/document-collaboration-shell"
 import { Descendant } from "slate"
-import { DocumentIcon } from "@/components/document/document-icon"
-import { DocumentTitleEditor } from "@/components/document/document-title-editor"
-import { ShareButton } from "@/components/document/share-button"
 
 export default async function DocumentPage({ params }: { params: Promise<{ documentId: string }> }) {
     const { documentId } = await params
@@ -45,56 +41,18 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
                     children: [{ text: "" }],
                 },
             ]
+
     return (
-        <div className="flex h-screen w-screen overflow-hidden bg-muted/40">
-            {/* MAIN CONTENT */}
-            <div className="flex flex-col flex-1 relative">
-
-                {/* ===================== */}
-                {/* TOP NAVBAR */}
-                {/* ===================== */}
-                <div className="h-14 px-4 md:px-6 border-b bg-background flex items-center justify-between">
-
-                    {/* LEFT */}
-                    <div className="flex items-center gap-3 min-w-0">
-                        <DocumentIcon iconSeed={document.id} size={40} withBackground containerClassName="size-10 rounded-md" />
-
-                        <DocumentTitleEditor documentId={document.id} initialTitle={document.title} updatedAt={document.updatedAt} isStarred={isStarred!} />
-
-                    </div>
-
-                    {/* RIGHT */}
-                    <div className="flex items-stretch gap-3">
-
-                        {/* Presence Avatars */}
-                        <div className="hidden sm:flex -space-x-2">
-                            <Avatar className="w-8 h-8 border">
-                                <AvatarFallback>JD</AvatarFallback>
-                            </Avatar>
-                            <Avatar className="w-8 h-8 border">
-                                <AvatarFallback>MK</AvatarFallback>
-                            </Avatar>
-                            <div className="w-8 h-8 rounded-full bg-muted text-xs flex items-center justify-center border">
-                                +3
-                            </div>
-                        </div>
-
-                        <ShareButton documentId={document.id} />
-                    </div>
-                </div>
-
-                {/* ===================== */}
-                {/* DOCUMENT BODY */}
-                {/* ===================== */}
-                <div className="flex-1 relative overflow-auto">
-                    <div className="absolute inset-0 overflow-auto">
-                        <div className="w-full mx-auto px-4 md:px-8 pb-32">
-                            <SlateEditor documentId={document.id} initialValue={initialValue} />
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
+        <DocumentCollaborationShell
+            documentId={document.id}
+            initialValue={initialValue}
+            initialTitle={document.title}
+            updatedAt={document.updatedAt}
+            isStarred={Boolean(isStarred)}
+            currentUser={{
+                email: session.user.email,
+                name: session.user.name,
+            }}
+        />
     )
 }

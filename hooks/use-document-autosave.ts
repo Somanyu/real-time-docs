@@ -1,11 +1,15 @@
 "use client"
 
 import { useDocumentSaveStore } from "@/store/document-save-store";
-import { useEffect, useRef } from "react";
+import { MutableRefObject, useEffect, useRef } from "react";
 import { Descendant } from "slate";
 import { toast } from "sonner";
 
-export function useDocumentAutosave(documentId: string, value: Descendant[]) {
+export function useDocumentAutosave(
+    documentId: string,
+    value: Descendant[],
+    skipSaveRef?: MutableRefObject<boolean>
+) {
     const setStatus = useDocumentSaveStore((s) => s.setStatus)
 
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -15,6 +19,12 @@ export function useDocumentAutosave(documentId: string, value: Descendant[]) {
 
     useEffect(() => {
         const serialized = JSON.stringify(value)
+
+        if (skipSaveRef?.current) {
+            skipSaveRef.current = false
+            lastSavedRef.current = serialized
+            return
+        }
 
         // skip first render
         if (!hasMountedRef.current) {
@@ -57,5 +67,5 @@ export function useDocumentAutosave(documentId: string, value: Descendant[]) {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current)
         }
-    }, [value, documentId, setStatus])
+    }, [value, documentId, setStatus, skipSaveRef])
 }

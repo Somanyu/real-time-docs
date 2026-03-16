@@ -3,6 +3,9 @@ import { RenderLeafProps } from "slate-react"
 
 export const Leaf = React.memo((props: RenderLeafProps) => {
     let { children } = props
+    const decoratedLeaf = props.leaf as typeof props.leaf & {
+        remoteSelectionColor?: string
+    }
 
     if (props.leaf.bold) children = <strong>{children}</strong>
     if (props.leaf.italic) children = <em>{children}</em>
@@ -17,6 +20,7 @@ export const Leaf = React.memo((props: RenderLeafProps) => {
                     ? `${props.leaf.fontSize}px`
                     : undefined,
                 color: props.leaf.color || undefined,
+                backgroundColor: decoratedLeaf.remoteSelectionColor,
             }}
         >
             {children}

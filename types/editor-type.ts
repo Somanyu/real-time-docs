@@ -1,4 +1,5 @@
 import { LIST_TYPES } from "@/constants/editor"
+import type { CollaborationUser, RealtimeSocket } from "@/lib/websocket-client"
 import { Descendant } from "slate"
 
 export type AlignType = "left" | "center" | "right" | "justify"
@@ -17,6 +18,8 @@ export type BlockFormat =
 export interface SlateEditorProps {
     initialValue: Descendant[],
     documentId: string,
+    socket?: RealtimeSocket | null
+    currentUser?: CollaborationUser
 }
 
 export interface MarkButtonProps {
