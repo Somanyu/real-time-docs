@@ -1,4 +1,4 @@
-import { Prisma } from "@/app/generated/prisma/client"
+import type { Prisma } from "@/app/generated/prisma/client"
 import { ColumnDef } from "@tanstack/react-table"
 import { LucideIcon } from "lucide-react"
 

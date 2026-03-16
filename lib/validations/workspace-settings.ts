@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { WorkspaceRole } from "@/app/generated/prisma/enums"
 import { collaboratorEmailSchema } from "@/lib/validations/add-workspace"
 
 export const updateWorkspaceNameSchema = z.object({
@@ -12,4 +13,9 @@ export const updateWorkspaceNameSchema = z.object({
 
 export const addWorkspaceCollaboratorSchema = z.object({
     email: collaboratorEmailSchema,
+    role: z.enum([WorkspaceRole.EDITOR, WorkspaceRole.VIEWER]),
+})
+
+export const updateWorkspaceCollaboratorRoleSchema = z.object({
+    role: z.enum([WorkspaceRole.EDITOR, WorkspaceRole.VIEWER]),
 })

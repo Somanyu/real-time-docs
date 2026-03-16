@@ -1,12 +1,7 @@
 "use client"
 
-import { Workspace, WorkspaceMember } from "@/app/generated/prisma/client"
+import { WorkspaceContextValue } from "@/types/workspace"
 import { createContext, useContext } from "react"
-
-interface WorkspaceContextValue {
-    workspace: Workspace
-    membership: WorkspaceMember
-}
 
 const WorkspaceContext =
     createContext<WorkspaceContextValue | null>(null)

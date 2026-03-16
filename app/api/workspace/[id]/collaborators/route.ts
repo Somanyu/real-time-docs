@@ -38,7 +38,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (!parsedInput.success) {
         return NextResponse.json(
             {
-                error: "Invalid collaborator email",
+                error: "Invalid collaborator data",
                 details: parsedInput.error.flatten(),
             },
             { status: 400 }
@@ -46,6 +46,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }
 
     const email = parsedInput.data.email.trim().toLowerCase()
+    const role = parsedInput.data.role
 
     if (email === session.user.email.toLowerCase()) {
         return NextResponse.json({ error: "You are already part of this workspace" }, { status: 400 })
@@ -73,12 +74,23 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         return NextResponse.json({ error: "That user is already a collaborator" }, { status: 409 })
     }
 
-    await prisma.$transaction(async (tx) => {
-        await tx.workspaceMember.create({
+    const createdMember = await prisma.$transaction(async (tx) => {
+        const member = await tx.workspaceMember.create({
             data: {
                 userId: collaborator.id,
                 workspaceId,
-                role: "EDITOR",
+                role,
+            },
+            select: {
+                id: true,
+                role: true,
+                userId: true,
+                user: {
+                    select: {
+                        email: true,
+                        name: true,
+                    },
+                },
             },
         })
 
@@ -89,13 +101,17 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 userId: session.user.id,
                 metadata: {
                     collaboratorEmail: collaborator.email,
+                    role,
                 },
             },
         })
+
+        return member
     })
 
     const response: AddWorkspaceCollaboratorResponse = {
         addedCollaborator: collaborator.email,
+        member: createdMember,
     }
 
     return NextResponse.json(response)

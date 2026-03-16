@@ -1,4 +1,4 @@
-import { WorkspaceRole } from "@/app/generated/prisma/client"
+import type { WorkspaceRole } from "@/app/generated/prisma/enums"
 import { WORKSPACE_FILTERS } from "@/constants/workspace"
 
 export interface WorkspacePageProps {
@@ -50,6 +50,26 @@ export type WorkspaceMemberListItem = {
     }
 }
 
+export type WorkspaceSummary = {
+    id: string
+    name: string
+    slug: string
+    role: WorkspaceRole
+}
+
+export type WorkspaceContextWorkspace = {
+    id: string
+    name: string
+    slug: string
+}
+
+export type WorkspaceContextMembership = {
+    id: string
+    role: WorkspaceRole
+    userId: string
+    workspaceId: string
+}
+
 export type WorkspaceSettingsResponse = {
     currentUserRole: WorkspaceRole
     members: WorkspaceMemberListItem[]
@@ -66,10 +86,15 @@ export type UpdateWorkspaceNameResponse = {
 
 export type AddWorkspaceCollaboratorResponse = {
     addedCollaborator: string
+    member: WorkspaceMemberListItem
 }
 
 export type RemoveWorkspaceCollaboratorResponse = {
     removedCollaboratorId: string
+}
+
+export type UpdateWorkspaceCollaboratorRoleResponse = {
+    member: WorkspaceMemberListItem
 }
 
 export type AISummaryModalProps = {
@@ -79,3 +104,8 @@ export type AISummaryModalProps = {
 }
 
 export type WorkspaceFilter = (typeof WORKSPACE_FILTERS)[number] | "all"
+
+export interface WorkspaceContextValue {
+    workspace: WorkspaceContextWorkspace
+    membership: WorkspaceContextMembership
+}

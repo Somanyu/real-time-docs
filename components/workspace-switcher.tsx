@@ -4,7 +4,6 @@ import { ChevronsUpDown, Plus, Settings2, Trash2Icon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
 import { usePathname, useRouter } from "next/navigation"
-import { Workspace } from "@/app/generated/prisma/client"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { createAvatar } from "@dicebear/core"
@@ -12,17 +11,18 @@ import { identicon } from '@dicebear/collection';
 import { CreateWorkspaceDialog } from "./workspace/create-workspace-dialog"
 import { AlertDialogContent, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialog } from "./ui/alert-dialog"
 import { ManageWorkspaceDialog } from "./workspace/manage-workspace-dialog"
+import type { WorkspaceSummary } from "@/types/workspace"
 
 export function WorkspaceSwitcher() {
   const pathname = usePathname()
   const router = useRouter()
   const { isMobile } = useSidebar()
 
-  const [workspace, setWorkspace] = useState<Workspace[]>([])
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
+  const [workspace, setWorkspace] = useState<WorkspaceSummary[]>([])
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceSummary | null>(null)
   const [openCreateWorkspaceDialog, setOpenCreateWorkspaceDialog] = useState<boolean>(false)
   const [openManageWorkspaceDialog, setOpenManageWorkspaceDialog] = useState<boolean>(false)
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null)
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceSummary | null>(null)
   const [isDeleting, setIsDeleting] = useState<boolean>(false)
 
   /**
@@ -40,7 +40,7 @@ export function WorkspaceSwitcher() {
 
       const slugFromUrl = pathname.split("/")[2]
 
-      const active = data.find((w: Workspace) => w.slug === slugFromUrl)
+      const active = data.find((w: WorkspaceSummary) => w.slug === slugFromUrl)
       setActiveWorkspace(active || data[0])
   }, [pathname])
 
@@ -51,7 +51,7 @@ export function WorkspaceSwitcher() {
   /**
    * Navigates to the selected workspace from the switcher.
    */
-  const handleSwitch = (workspace: Workspace) => {
+  const handleSwitch = (workspace: WorkspaceSummary) => {
     setActiveWorkspace(workspace)
     router.push(`/workspace/${workspace.slug}`)
   }

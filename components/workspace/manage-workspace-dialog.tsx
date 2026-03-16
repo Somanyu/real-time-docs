@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { WorkspaceRole } from "@/app/generated/prisma/enums"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Settings2, UserPlus, X } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
@@ -12,19 +13,29 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addWorkspaceCollaboratorSchema, updateWorkspaceNameSchema } from "@/lib/validations/workspace-settings"
 import {
     AddWorkspaceCollaboratorResponse,
     ManageWorkspaceDialogProps,
     RemoveWorkspaceCollaboratorResponse,
+    UpdateWorkspaceCollaboratorRoleResponse,
     UpdateWorkspaceNameResponse,
     WorkspaceMemberListItem,
     WorkspaceSettingsResponse,
 } from "@/types/workspace"
+import { COLLABORATOR_ROLE_OPTIONS } from "@/constants/workspace"
 
-type ApiErrorResponse = {
-    error: string
-}
+const sortMembersByRoleAndJoinedOrder = (memberList: WorkspaceMemberListItem[]) =>
+    [...memberList].sort((left, right) => {
+        const roleRank: Record<WorkspaceRole, number> = {
+            OWNER: 0,
+            EDITOR: 1,
+            VIEWER: 2,
+        }
+
+        return roleRank[left.role] - roleRank[right.role]
+    })
 
 const getErrorMessage = (fallbackMessage: string, error: unknown) => {
     if (error instanceof Error && error.message) {
@@ -46,6 +57,7 @@ export function ManageWorkspaceDialog({
     const [isSavingName, setIsSavingName] = useState<boolean>(false)
     const [isAddingCollaborator, setIsAddingCollaborator] = useState<boolean>(false)
     const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
+    const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null)
 
     const isOwner = currentUserRole === "OWNER"
     const workspaceNameForm = useForm<z.infer<typeof updateWorkspaceNameSchema>>({
@@ -58,6 +70,7 @@ export function ManageWorkspaceDialog({
         resolver: zodResolver(addWorkspaceCollaboratorSchema),
         defaultValues: {
             email: "",
+            role: WorkspaceRole.EDITOR,
         },
     })
 
@@ -73,13 +86,13 @@ export function ManageWorkspaceDialog({
             setIsLoading(true)
 
             const response = await fetch(`/api/workspace/${workspaceId}/settings`)
-            const data: WorkspaceSettingsResponse | ApiErrorResponse = await response.json()
+            const data: WorkspaceSettingsResponse | { error: string } = await response.json()
 
             if (!response.ok || "error" in data) {
                 toast.error("error" in data ? data.error : "Unable to load workspace settings")
             } else {
                 workspaceNameForm.reset({ name: data.workspace.name })
-                collaboratorForm.reset({ email: "" })
+                collaboratorForm.reset({ email: "", role: WorkspaceRole.EDITOR })
                 setMembers(data.members)
                 setCurrentUserRole(data.currentUserRole)
             }
@@ -122,7 +135,7 @@ export function ManageWorkspaceDialog({
                 }),
             })
 
-            const data: UpdateWorkspaceNameResponse | ApiErrorResponse = await response.json()
+            const data: UpdateWorkspaceNameResponse | { error: string } = await response.json()
 
             if (!response.ok || "error" in data) {
                 toast.error("error" in data ? data.error : "Unable to update workspace name")
@@ -142,7 +155,7 @@ export function ManageWorkspaceDialog({
     /**
      * Validates the entered collaborator email and adds the user to the workspace.
      */
-    const handleAddCollaborator = collaboratorForm.handleSubmit(async ({ email }) => {
+    const handleAddCollaborator = collaboratorForm.handleSubmit(async ({ email, role }) => {
         if (!workspaceId) {
             return
         }
@@ -155,17 +168,17 @@ export function ManageWorkspaceDialog({
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, role }),
             })
 
-            const data: AddWorkspaceCollaboratorResponse | ApiErrorResponse = await response.json()
+            const data: AddWorkspaceCollaboratorResponse | { error: string } = await response.json()
 
             if (!response.ok || "error" in data) {
                 toast.error("error" in data ? data.error : "Unable to add collaborator")
             } else {
-                collaboratorForm.reset({ email: "" })
-                toast.success(`Added ${data.addedCollaborator} to the workspace`)
-                await loadWorkspaceSettings()
+                collaboratorForm.reset({ email: "", role: WorkspaceRole.EDITOR })
+                setMembers((currentMembers) => sortMembersByRoleAndJoinedOrder([...currentMembers, data.member]))
+                toast.success(`Added ${data.addedCollaborator} as ${data.member.role.toLowerCase()}`)
                 await onSaved()
             }
         } catch (error) {
@@ -191,7 +204,7 @@ export function ManageWorkspaceDialog({
                 method: "DELETE",
             })
 
-            const data: RemoveWorkspaceCollaboratorResponse | ApiErrorResponse = await response.json()
+            const data: RemoveWorkspaceCollaboratorResponse | { error: string } = await response.json()
 
             if (!response.ok || "error" in data) {
                 toast.error("error" in data ? data.error : "Unable to remove collaborator")
@@ -205,6 +218,46 @@ export function ManageWorkspaceDialog({
             toast.error(getErrorMessage("Failed to remove collaborator", error))
         } finally {
             setRemovingMemberId(null)
+        }
+    }
+
+    /**
+     * Updates an existing collaborator role without requiring remove + re-add.
+     */
+    const handleUpdateCollaboratorRole = async (memberId: string, role: WorkspaceRole) => {
+        if (!workspaceId) {
+            return
+        }
+
+        try {
+            setUpdatingMemberId(memberId)
+
+            const response = await fetch(`/api/workspace/${workspaceId}/collaborators/${memberId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ role }),
+            })
+
+            const data: UpdateWorkspaceCollaboratorRoleResponse | { error: string } = await response.json()
+
+            if (!response.ok || "error" in data) {
+                toast.error("error" in data ? data.error : "Unable to update collaborator role")
+            } else {
+                setMembers((currentMembers) =>
+                    sortMembersByRoleAndJoinedOrder(
+                        currentMembers.map((member) => (member.id === data.member.id ? data.member : member))
+                    )
+                )
+                toast.success(`Updated ${data.member.user.email} to ${data.member.role.toLowerCase()}`)
+                await onSaved()
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error(getErrorMessage("Failed to update collaborator role", error))
+        } finally {
+            setUpdatingMemberId(null)
         }
     }
 
@@ -250,63 +303,103 @@ export function ManageWorkspaceDialog({
                         </form>
 
                         <form onSubmit={handleAddCollaborator}>
-                            <Controller
-                                name="email"
-                                control={collaboratorForm.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="collaborator-email">Add Collaborator</FieldLabel>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                {...field}
-                                                id="collaborator-email"
-                                                placeholder="name@example.com"
-                                                aria-invalid={fieldState.invalid}
-                                                disabled={!isOwner || isAddingCollaborator}
-                                                onChange={(event) => field.onChange(event.target.value.toLowerCase())}
-                                            />
-                                            <Button type="submit" disabled={!isOwner || isAddingCollaborator}>
-                                                <UserPlus className="h-4 w-4" />
-                                                {isAddingCollaborator ? "Adding..." : "Add"}
-                                            </Button>
-                                        </div>
-                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                                        {!isOwner && (
-                                            <FieldDescription>Only workspace owners can add collaborators.</FieldDescription>
-                                        )}
-                                    </Field>
-                                )}
-                            />
+                            <div className="space-y-3">
+                                <Controller
+                                    name="email"
+                                    control={collaboratorForm.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor="collaborator-email">Add Collaborator</FieldLabel>
+                                            <div className="flex flex-col gap-2 sm:flex-row">
+                                                <Input
+                                                    {...field}
+                                                    id="collaborator-email"
+                                                    placeholder="name@example.com"
+                                                    aria-invalid={fieldState.invalid}
+                                                    disabled={!isOwner || isAddingCollaborator}
+                                                    onChange={(event) => field.onChange(event.target.value.toLowerCase())}
+                                                    className="basis-[80%]"
+                                                />
+                                                <Controller
+                                                    name="role"
+                                                    control={collaboratorForm.control}
+                                                    render={({ field: roleField }) => (
+                                                        <Select
+                                                            value={roleField.value}
+                                                            onValueChange={roleField.onChange}
+                                                            disabled={!isOwner || isAddingCollaborator}
+                                                        >
+                                                            <SelectTrigger className="w-full basis-[20%]">
+                                                                <SelectValue placeholder="Role" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {COLLABORATOR_ROLE_OPTIONS.map((option) => (
+                                                                    <SelectItem key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                />
+                                                <Button type="submit" disabled={!isOwner || isAddingCollaborator}>
+                                                    <UserPlus className="h-4 w-4" />
+                                                    {isAddingCollaborator ? "Adding..." : "Add"}
+                                                </Button>
+                                            </div>
+                                            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                            {!isOwner && (
+                                                <FieldDescription>Only workspace owners can add collaborators.</FieldDescription>
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                            </div>
                         </form>
 
                         <Field>
                             <FieldLabel>Collaborators</FieldLabel>
-                            <div className="space-y-3 rounded-lg p-3">
-                                {members.map((member) => (
-                                    <div key={member.id} className="flex items-center justify-between gap-3 rounded-md p-3">
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-medium">{member.user.email}</p>
-                                        </div>
+                            <div className="space-y-4 rounded-lg p-3">
+                                {members.filter((member) => member.role !== "OWNER").length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No collaborators added yet.</p>
+                                ) : (
+                                    members
+                                        .filter((member) => member.role !== "OWNER")
+                                        .map((member) => (
+                                            <div key={member.id} className="flex items-center justify-between gap-3 rounded-md p-3">
+                                                <Badge asChild variant="outline">
+                                                    <button
+                                                        type="button"
+                                                        disabled={!isOwner || removingMemberId === member.id}
+                                                        onClick={() => void handleRemoveCollaborator(member.id)}
+                                                        className="max-w-full cursor-pointer px-3 py-1.5 text-sm disabled:cursor-not-allowed"
+                                                    >
+                                                        <span className="truncate">{member.user.name ?? member.user.email}</span>
+                                                        <X className="h-4 w-4 shrink-0" />
+                                                    </button>
+                                                </Badge>
 
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant={member.role === "OWNER" ? "default" : "secondary"}>
-                                                {member.role}
-                                            </Badge>
-
-                                            {member.role !== "OWNER" && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    disabled={!isOwner || removingMemberId === member.id}
-                                                    onClick={() => void handleRemoveCollaborator(member.id)}
+                                                <Select
+                                                    value={member.role}
+                                                    onValueChange={(value) =>
+                                                        void handleUpdateCollaboratorRole(member.id, value as WorkspaceRole)
+                                                    }
+                                                    disabled={!isOwner || updatingMemberId === member.id}
                                                 >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                                    <SelectTrigger className="w-28">
+                                                        <SelectValue placeholder="Role" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {COLLABORATOR_ROLE_OPTIONS.map((option) => (
+                                                            <SelectItem key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        ))
+                                )}
                             </div>
                         </Field>
                     </div>
