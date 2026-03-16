@@ -3,18 +3,20 @@
 import { useCallback, useEffect, useState } from "react"
 import { WorkspaceRole } from "@/app/generated/prisma/enums"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Settings2, UserPlus, X } from "lucide-react"
+import { Settings2 } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import z from "zod"
 
-import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addWorkspaceCollaboratorSchema, updateWorkspaceNameSchema } from "@/lib/validations/workspace-settings"
+import { cn } from "@/lib/utils"
 import {
     AddWorkspaceCollaboratorResponse,
     ManageWorkspaceDialogProps,
@@ -44,6 +46,16 @@ const getErrorMessage = (fallbackMessage: string, error: unknown) => {
 
     return fallbackMessage
 }
+
+const getInitials = (value: string) =>
+    value
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("")
+
+const getRoleLabel = (role: WorkspaceRole) => role.charAt(0) + role.slice(1).toLowerCase()
 
 export function ManageWorkspaceDialog({
     onSaved,
@@ -261,6 +273,16 @@ export function ManageWorkspaceDialog({
         }
     }
 
+    const getMemberActionLabel = (
+        isBusy: boolean,
+        removingMemberId: string | null,
+        memberId: string,
+        role: WorkspaceRole
+    ) => {
+        if (!isBusy) return getRoleLabel(role)
+        return removingMemberId === memberId ? "Removing..." : "Saving..."
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
@@ -303,22 +325,24 @@ export function ManageWorkspaceDialog({
                         </form>
 
                         <form onSubmit={handleAddCollaborator}>
-                            <div className="space-y-3">
-                                <Controller
-                                    name="email"
-                                    control={collaboratorForm.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor="collaborator-email">Add Collaborator</FieldLabel>
-                                            <div className="flex flex-col gap-2 sm:flex-row">
+                            <Controller
+                                name="email"
+                                control={collaboratorForm.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <p className="text-sm font-medium text-muted-foreground">Add collaborator</p>
+                                            </div>
+
+                                            <div className="flex gap-2">
                                                 <Input
                                                     {...field}
                                                     id="collaborator-email"
-                                                    placeholder="name@example.com"
+                                                    placeholder="Add people by email..."
                                                     aria-invalid={fieldState.invalid}
                                                     disabled={!isOwner || isAddingCollaborator}
                                                     onChange={(event) => field.onChange(event.target.value.toLowerCase())}
-                                                    className="basis-[80%]"
                                                 />
                                                 <Controller
                                                     name="role"
@@ -329,7 +353,7 @@ export function ManageWorkspaceDialog({
                                                             onValueChange={roleField.onChange}
                                                             disabled={!isOwner || isAddingCollaborator}
                                                         >
-                                                            <SelectTrigger className="w-full basis-[20%]">
+                                                            <SelectTrigger className="w-32">
                                                                 <SelectValue placeholder="Role" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -342,19 +366,19 @@ export function ManageWorkspaceDialog({
                                                         </Select>
                                                     )}
                                                 />
-                                                <Button type="submit" disabled={!isOwner || isAddingCollaborator}>
-                                                    <UserPlus className="h-4 w-4" />
+                                                <Button type="submit" disabled={!isOwner || isAddingCollaborator || !field.value.trim()}>
                                                     {isAddingCollaborator ? "Adding..." : "Add"}
                                                 </Button>
                                             </div>
+
                                             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                                             {!isOwner && (
                                                 <FieldDescription>Only workspace owners can add collaborators.</FieldDescription>
                                             )}
-                                        </Field>
-                                    )}
-                                />
-                            </div>
+                                        </div>
+                                    </Field>
+                                )}
+                            />
                         </form>
 
                         <Field>
@@ -365,40 +389,62 @@ export function ManageWorkspaceDialog({
                                 ) : (
                                     members
                                         .filter((member) => member.role !== "OWNER")
-                                        .map((member) => (
-                                            <div key={member.id} className="flex items-center justify-between gap-3 rounded-md p-3">
-                                                <Badge asChild variant="outline">
-                                                    <button
-                                                        type="button"
-                                                        disabled={!isOwner || removingMemberId === member.id}
-                                                        onClick={() => void handleRemoveCollaborator(member.id)}
-                                                        className="max-w-full cursor-pointer px-3 py-1.5 text-sm disabled:cursor-not-allowed"
-                                                    >
-                                                        <span className="truncate">{member.user.name ?? member.user.email}</span>
-                                                        <X className="h-4 w-4 shrink-0" />
-                                                    </button>
-                                                </Badge>
+                                        .map((member) => {
+                                            const displayName = member.user.name?.trim() || member.user.email
+                                            const isBusy = removingMemberId === member.id || updatingMemberId === member.id
 
-                                                <Select
-                                                    value={member.role}
-                                                    onValueChange={(value) =>
-                                                        void handleUpdateCollaboratorRole(member.id, value as WorkspaceRole)
-                                                    }
-                                                    disabled={!isOwner || updatingMemberId === member.id}
-                                                >
-                                                    <SelectTrigger className="w-28">
-                                                        <SelectValue placeholder="Role" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {COLLABORATOR_ROLE_OPTIONS.map((option) => (
-                                                            <SelectItem key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        ))
+                                            return (
+                                                <div key={member.id} className="flex items-center justify-between gap-3 rounded-md p-3">
+                                                    <div className="flex min-w-0 items-center gap-3">
+                                                        <Avatar>
+                                                            <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                                                        </Avatar>
+
+                                                        <div className="min-w-0">
+                                                            <p className="truncate text-sm font-medium">{displayName}</p>
+                                                            {member.user.name ? (
+                                                                <p className="truncate text-xs text-muted-foreground">{member.user.email}</p>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+
+                                                    {isOwner ? (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="outline" size="sm" disabled={isBusy} className={cn("min-w-24 justify-between rounded-full px-3 text-xs")}>
+                                                                    {getMemberActionLabel(isBusy, removingMemberId, member.id, member.role)}
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+
+                                                            <DropdownMenuContent align="end" className="w-40">
+                                                                {COLLABORATOR_ROLE_OPTIONS.map((option) => (
+                                                                    <DropdownMenuItem
+                                                                        key={option.value}
+                                                                        disabled={option.value === member.role}
+                                                                        onClick={() =>
+                                                                            void handleUpdateCollaboratorRole(member.id, option.value)
+                                                                        }
+                                                                    >
+                                                                        {option.label}
+                                                                    </DropdownMenuItem>
+                                                                ))}
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => void handleRemoveCollaborator(member.id)}
+                                                                    className="text-destructive focus:text-destructive"
+                                                                >
+                                                                    Remove access
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    ) : (
+                                                        <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
+                                                            {getRoleLabel(member.role)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )
+                                        })
                                 )}
                             </div>
                         </Field>

@@ -3,12 +3,11 @@ import { authOptions } from "@/lib/auth"
 import { getServerSession } from "next-auth"
 import { notFound } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Share2 } from "lucide-react"
 import { SlateEditor } from "@/components/editor/slate-editor"
 import { Descendant } from "slate"
 import { DocumentIcon } from "@/components/document/document-icon"
 import { DocumentTitleEditor } from "@/components/document/document-title-editor"
+import { ShareButton } from "@/components/document/share-button"
 
 export default async function DocumentPage({ params }: { params: Promise<{ documentId: string }> }) {
     const { documentId } = await params
@@ -80,10 +79,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ docum
                             </div>
                         </div>
 
-                        <Button size="sm">
-                            <Share2 className="w-4 h-4 mr-2" />
-                            Share
-                        </Button>
+                        <ShareButton documentId={document.id} />
                     </div>
                 </div>
 
