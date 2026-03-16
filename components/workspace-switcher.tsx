@@ -1,16 +1,17 @@
 "use client"
 
-import { ChevronsUpDown, Plus, Trash2Icon } from "lucide-react"
+import { ChevronsUpDown, Plus, Settings2, Trash2Icon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
 import { usePathname, useRouter } from "next/navigation"
 import { Workspace } from "@/app/generated/prisma/client"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { createAvatar } from "@dicebear/core"
 import { identicon } from '@dicebear/collection';
 import { CreateWorkspaceDialog } from "./workspace/create-workspace-dialog"
 import { AlertDialogContent, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction, AlertDialog } from "./ui/alert-dialog"
+import { ManageWorkspaceDialog } from "./workspace/manage-workspace-dialog"
 
 export function WorkspaceSwitcher() {
   const pathname = usePathname()
@@ -20,12 +21,14 @@ export function WorkspaceSwitcher() {
   const [workspace, setWorkspace] = useState<Workspace[]>([])
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
   const [openCreateWorkspaceDialog, setOpenCreateWorkspaceDialog] = useState<boolean>(false)
+  const [openManageWorkspaceDialog, setOpenManageWorkspaceDialog] = useState<boolean>(false)
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null)
   const [isDeleting, setIsDeleting] = useState<boolean>(false)
 
-
-  useEffect(() => {
-    async function loadWorkspaces() {
+  /**
+   * Loads the available workspaces and synchronizes the active workspace with the current URL.
+   */
+  const loadWorkspaces = useCallback(async () => {
       const res = await fetch("/api/me/get-workspaces")
 
       if (!res.ok) {
@@ -39,15 +42,23 @@ export function WorkspaceSwitcher() {
 
       const active = data.find((w: Workspace) => w.slug === slugFromUrl)
       setActiveWorkspace(active || data[0])
-    }
-    loadWorkspaces()
   }, [pathname])
 
+  useEffect(() => {
+    void loadWorkspaces()
+  }, [loadWorkspaces])
+
+  /**
+   * Navigates to the selected workspace from the switcher.
+   */
   const handleSwitch = (workspace: Workspace) => {
     setActiveWorkspace(workspace)
     router.push(`/workspace/${workspace.slug}`)
   }
 
+  /**
+   * Deletes the selected workspace and redirects if another workspace is available.
+   */
   async function handleDeleteWorkspace() {
     if (!workspaceToDelete) return
 
@@ -136,6 +147,14 @@ export function WorkspaceSwitcher() {
                 )
               })}
               <DropdownMenuSeparator />
+              {activeWorkspace && (
+                <DropdownMenuItem onClick={() => setOpenManageWorkspaceDialog(true)} className="gap-2 p-2 cursor-pointer">
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                    <Settings2 className="size-4" />
+                  </div>
+                  <div className="font-medium">Manage workspace</div>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => setOpenCreateWorkspaceDialog(true)} className="gap-2 p-2 cursor-pointer">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <Plus className="size-4" />
@@ -148,6 +167,15 @@ export function WorkspaceSwitcher() {
       </SidebarMenu>
 
       <CreateWorkspaceDialog open={openCreateWorkspaceDialog} onOpenChange={setOpenCreateWorkspaceDialog} />
+      <ManageWorkspaceDialog
+        open={openManageWorkspaceDialog}
+        onOpenChange={setOpenManageWorkspaceDialog}
+        workspaceId={activeWorkspace?.id ?? null}
+        onSaved={async () => {
+          await loadWorkspaces()
+          router.refresh()
+        }}
+      />
     </>
   )
 }
