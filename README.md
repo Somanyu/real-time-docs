@@ -34,3 +34,25 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+# Realtime server deployment
+
+The Socket.IO server in `ws-server/server.ts` can be deployed separately from the Next.js app.
+
+## Render
+
+This repo includes a `render.yaml` for deploying the realtime server as a Render web service.
+
+Set these Render environment variables:
+
+- `CORS_ORIGIN=https://your-vercel-app.vercel.app`
+- `HOST=0.0.0.0`
+
+Then set this in your frontend deployment provider:
+
+- `NEXT_PUBLIC_WEBSOCKET_URL=https://your-render-service.onrender.com`
+
+Useful commands:
+
+- `npm run ws:dev` for local development
+- `npm run ws:start` for production-style startup

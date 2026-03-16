@@ -1,9 +1,32 @@
+import "dotenv/config"
+
+import { createServer } from "node:http"
 import { Server } from "socket.io"
 import type { ClientToServerEvents, CollaborationUser, CollaboratorPresence, RemoteCursor, ServerToClientEvents } from "../lib/websocket-client"
 
-const io = new Server<ClientToServerEvents, ServerToClientEvents>(4001, {
+const port = Number(process.env.PORT ?? 4001)
+const host = process.env.HOST ?? "0.0.0.0"
+
+const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+
+const httpServer = createServer((req, res) => {
+    if (req.url === "/" || req.url === "/healthz") {
+        res.writeHead(200, { "Content-Type": "application/json" })
+        res.end(JSON.stringify({ ok: true }))
+        return
+    }
+
+    res.writeHead(404, { "Content-Type": "application/json" })
+    res.end(JSON.stringify({ error: "Not found" }))
+})
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
-        origin: "*",
+        origin: allowedOrigins.length > 0 ? allowedOrigins : "*",
+        methods: ["GET", "POST"],
     },
 })
 
@@ -143,4 +166,8 @@ io.on("connection", (socket) => {
         leaveDocument(socket.id, data)
         console.log("User disconnected:", socket.id)
     })
+})
+
+httpServer.listen(port, host, () => {
+    console.log(`Realtime server listening on http://${host}:${port}`)
 })

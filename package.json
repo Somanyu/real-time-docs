@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "ws:dev": "tsx watch ws-server/server.ts",
+    "ws:start": "tsx ws-server/server.ts",
     "dev:all": "npm run ws:dev & npm run dev",
     "build": "prisma generate && next build",
     "start": "next start",
